@@ -1,6 +1,7 @@
 package com.example.SonicCanopy.exception.handler;
 
 import com.example.SonicCanopy.controller.UserController;
+import com.example.SonicCanopy.dto.error.ApiError;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -8,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.HashMap;
@@ -28,30 +30,47 @@ public class UserExceptionHandler {
     }
 
     @ExceptionHandler(UsernameNotFoundException.class)
-    public ResponseEntity<Object> handleUsernameNotFound(UsernameNotFoundException ex) {
-        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiError handleUsernameNotFoundException(UsernameNotFoundException ex) {
+        return new ApiError(
+                HttpStatus.NOT_FOUND.value(),
+                HttpStatus.NOT_FOUND.name(),
+                ex.getMessage()
+        );
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<Object> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         log.warn("Database constraint violation: {}", ex.getMessage());
-        return buildResponse(HttpStatus.CONFLICT, "A database constraint was violated");
+        return new ApiError(
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.name(),
+                "A database constraint was violated"
+        );
     }
 
+
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Object> handleIllegalArgument(IllegalArgumentException ex) {
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiError handleIllegalArgument(IllegalArgumentException ex) {
         log.warn("Illegal argument: {}", ex.getMessage());
-        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+        return new ApiError(
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.name(),
+                ex.getMessage()
+        );
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Object> handleOtherExceptions(Exception ex) {
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ApiError handleOtherExceptions(Exception ex) {
         log.error("Unhandled exception: {}", ex.getMessage(), ex);
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
-    }
-
-    private ResponseEntity<Object> buildResponse(HttpStatus status, String message) {
-        return buildResponse(status, message, null);
+        return new ApiError(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                HttpStatus.INTERNAL_SERVER_ERROR.name(),
+                "An unexpected error occurred"
+        );
     }
 
     private ResponseEntity<Object> buildResponse(HttpStatus status, String message, Object details) {

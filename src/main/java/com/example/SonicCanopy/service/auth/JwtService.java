@@ -14,7 +14,7 @@ import java.util.Map;
 public class JwtService {
 
     private final SecretKey secretKey;
-    private static final long ACCESS_TOKEN_EXPIRATION = 60 * 1000L; // 30 s
+    private static final long ACCESS_TOKEN_EXPIRATION = 15 * 60 * 1000L; //15m
     private static final long REFRESH_TOKEN_EXPIRATION = 7 * 24 * 60 * 60 * 1000L; // 7 days
 
     public JwtService(SecretKey secretKey) {

@@ -13,6 +13,6 @@ public interface ClubRepository extends JpaRepository<Club, Long> {
 
     boolean existsByName(String name);
 
-    Page<Club> findByNameContainingIgnoreCase(String name, Pageable pageable);
+    Page<Club> findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(String name, String description, Pageable pageable);
 
 }

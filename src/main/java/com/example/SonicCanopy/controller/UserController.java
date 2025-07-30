@@ -13,6 +13,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/users")
 @Slf4j
@@ -37,7 +39,7 @@ public class UserController {
     @GetMapping("/users/me")
     public ResponseEntity<UserDto> getCurrentUser(Authentication authentication) {
         String username = authentication.getName(); // or principal.getName()
-        User user = userService.findByUsername(username).orElseThrow(()-> new UsernameNotFoundException("User not found"));
+        User user = userService.getByUsername(username);
         return ResponseEntity.ok(mapper.toUserDto(user));
     }
 
