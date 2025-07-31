@@ -1,7 +1,8 @@
-package com.example.SonicCanopy.service.firebase;
+package com.example.SonicCanopy.service.firebase.concretes;
 
 import com.example.SonicCanopy.exception.club.ImageDeletionException;
 import com.example.SonicCanopy.exception.club.ImageUploadException;
+import com.example.SonicCanopy.service.firebase.abstracts.StorageService;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.StorageException;
@@ -15,14 +16,15 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-public class FirebaseStorageService {
+public class FirebaseStorageService implements StorageService {
 
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
     private static final List<String> ALLOWED_CONTENT_TYPES = List.of(
             "image/jpeg", "image/png", "image/webp"
     );
 
-    public String uploadClubProfileImage(Long clubId, MultipartFile file) {
+    @Override
+    public String uploadClubImage(Long clubId, MultipartFile file) {
         try {
             if (file.isEmpty()) {
                 throw new IllegalArgumentException("File is empty");
@@ -54,17 +56,8 @@ public class FirebaseStorageService {
         }
     }
 
-    private String getFileExtension(String type) {
-        // Mapping MIME type to proper file extension
-        return switch (type) {
-            case "image/jpeg" -> ".jpg";
-            case "image/png"  -> ".png";
-            case "image/webp" -> ".webp";
-            default -> throw new IllegalArgumentException("Unsupported file type: " + type);
-        };
-    }
-
-    public void deleteClubImageByUrl(String imageUrl) {
+    @Override
+    public void deleteClubImage(String imageUrl) {
         if (imageUrl == null || imageUrl.isBlank()) return;
 
         try {
@@ -86,5 +79,15 @@ public class FirebaseStorageService {
         } catch (StorageException e) {
             throw new ImageDeletionException("Failed to delete image from Firebase Storage", e);
         }
+    }
+
+    private String getFileExtension(String type) {
+        // Mapping MIME type to proper file extension
+        return switch (type) {
+            case "image/jpeg" -> ".jpg";
+            case "image/png"  -> ".png";
+            case "image/webp" -> ".webp";
+            default -> throw new IllegalArgumentException("Unsupported file type: " + type);
+        };
     }
 }

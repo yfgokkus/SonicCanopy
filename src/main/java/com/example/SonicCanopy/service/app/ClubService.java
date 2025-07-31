@@ -6,12 +6,11 @@ import com.example.SonicCanopy.dto.club.CreateClubRequestDto;
 import com.example.SonicCanopy.entities.Club;
 import com.example.SonicCanopy.entities.User;
 import com.example.SonicCanopy.exception.club.ClubNotFoundException;
-import com.example.SonicCanopy.exception.club.ImageDeletionException;
 import com.example.SonicCanopy.exception.club.UnauthorizedActionException;
 import com.example.SonicCanopy.mapper.ClubMapper;
 import com.example.SonicCanopy.repository.ClubMemberRepository;
 import com.example.SonicCanopy.repository.ClubRepository;
-import com.example.SonicCanopy.service.firebase.FirebaseStorageService;
+import com.example.SonicCanopy.service.firebase.concretes.FirebaseStorageService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -42,7 +41,7 @@ public class ClubService  {
 
         MultipartFile image = dto.profilePicture();
         if (image != null && !image.isEmpty()) {
-            String imageUrl = firebaseStorageService.uploadClubProfileImage(club.getId(), image);
+            String imageUrl = firebaseStorageService.uploadClubImage(club.getId(), image);
             club.setPictureUrl(imageUrl);
             club = clubRepository.save(club);
         }
@@ -64,13 +63,13 @@ public class ClubService  {
         // membershipRepository.deleteByClubId(clubId);
 
         if (club.getPictureUrl() != null && !club.getPictureUrl().isBlank()) {
-            firebaseStorageService.deleteClubImageByUrl(club.getPictureUrl());
+            firebaseStorageService.deleteClubImage(club.getPictureUrl());
         }
 
         clubRepository.delete(club);
     }
 
-    public String updateProfilePicture(Long clubId, MultipartFile file, User requester) {
+    public String updateClubImage(Long clubId, MultipartFile file, User requester) {
         Club club   = clubRepository.findById(clubId)
                 .orElseThrow(() -> new ClubNotFoundException("Club not found"));
 
@@ -78,7 +77,7 @@ public class ClubService  {
             throw new UnauthorizedActionException("Not allowed to update this club");
         }
 
-        String imageUrl = firebaseStorageService.uploadClubProfileImage(clubId, file);
+        String imageUrl = firebaseStorageService.uploadClubImage(clubId, file);
         club.setPictureUrl(imageUrl);
 
         return imageUrl;
@@ -93,16 +92,12 @@ public class ClubService  {
         }
 
         if (club.getPictureUrl() != null && !club.getPictureUrl().isBlank()) {
-            firebaseStorageService.deleteClubImageByUrl(club.getPictureUrl());
+            firebaseStorageService.deleteClubImage(club.getPictureUrl());
             club.setPictureUrl(null);
             clubRepository.save(club);
         }
     }
 
-    //    public Page<ClubDto> searchClubs(String query, Pageable pageable) {
-//        Page<Club> clubsPage = clubRepository.findByNameContainingIgnoreCase(query, pageable);
-//        return clubsPage.map(clubMapper::toDto);
-//    }
     public ClubSearchResultDto searchClubs(String query, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Club> resultPage = clubRepository

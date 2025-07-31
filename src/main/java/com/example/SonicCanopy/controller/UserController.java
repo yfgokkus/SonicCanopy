@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,10 +38,9 @@ public class UserController {
     }
 
     @GetMapping("/users/me")
-    public ResponseEntity<UserDto> getCurrentUser(Authentication authentication) {
-        String username = authentication.getName(); // or principal.getName()
-        User user = userService.getByUsername(username);
-        return ResponseEntity.ok(mapper.toUserDto(user));
+    public ResponseEntity<UserDto> getCurrentUser(@AuthenticationPrincipal User user) {
+        User userDromDb = userService.getByUsername(user.getUsername());
+        return ResponseEntity.ok(mapper.toUserDto(userDromDb));
     }
 
     @GetMapping("/admin")
