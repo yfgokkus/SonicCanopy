@@ -30,6 +30,9 @@ public class Club {
     @JoinColumn(name = "created_by")
     private User createdBy;
 
+    @Column(nullable = false)
+    private boolean isPrivate = false;
+
     @OneToMany(mappedBy = "club", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ClubMember> members;
 

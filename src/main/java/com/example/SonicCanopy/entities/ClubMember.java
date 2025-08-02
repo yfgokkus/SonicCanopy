@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.Set;
 
 @Data
 @Entity
@@ -30,16 +29,12 @@ public class ClubMember {
     @JoinColumn(name = "club_id")
     private Club club;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "club_member_roles",
-            joinColumns = {
-                    @JoinColumn(name = "user_id", referencedColumnName = "user_id"),
-                    @JoinColumn(name = "club_id", referencedColumnName = "club_id")
-            },
-            inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
-    private Set<ClubRole> roles;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ClubRole clubRole;
+
+    @Enumerated(EnumType.STRING)
+    private JoinStatus status;
 
     private LocalDateTime joinedAt;
 }

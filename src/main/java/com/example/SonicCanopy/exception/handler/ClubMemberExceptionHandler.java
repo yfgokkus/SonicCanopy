@@ -3,7 +3,9 @@ package com.example.SonicCanopy.exception.handler;
 import com.example.SonicCanopy.controller.ClubController;
 import com.example.SonicCanopy.controller.ClubMemberController;
 import com.example.SonicCanopy.dto.response.ApiResponse;
-import com.example.SonicCanopy.exception.club.*;
+import com.example.SonicCanopy.exception.clubMember.AlreadyMemberException;
+import com.example.SonicCanopy.exception.clubMember.ClubMemberDoesNotExistException;
+import com.example.SonicCanopy.exception.clubMember.RequestNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,22 +19,21 @@ import java.util.Map;
         assignableTypes = { ClubController.class, ClubMemberController.class }
 )
 @Slf4j
-public class ClubExceptionHandler {
+public class ClubMemberExceptionHandler {
 
-    @ExceptionHandler(ImageUploadException.class)
-    public ResponseEntity<ApiResponse<Void>> handleImageUploadException(ImageUploadException ex) {
-        return buildResponse(HttpStatus.BAD_REQUEST, "Image upload failed: " + ex.getMessage());
+    @ExceptionHandler(AlreadyMemberException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAlreadyMember(AlreadyMemberException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, "Already a member: " + ex.getMessage());
     }
 
-    @ExceptionHandler(ImageDeletionException.class)
-    public ResponseEntity<ApiResponse<Void>> handleImageDeletionError(ImageDeletionException ex) {
-        log.error("Image deletion failed", ex);
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Image deletion failed: " + ex.getMessage());
+    @ExceptionHandler(ClubMemberDoesNotExistException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMemberDoesNotExist(ClubMemberDoesNotExistException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, "Member does not exist: " + ex.getMessage());
     }
 
-    @ExceptionHandler(ClubNotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleClubNotFound(ClubNotFoundException ex) {
-        return buildResponse(HttpStatus.NOT_FOUND, "Club not found: " + ex.getMessage());
+    @ExceptionHandler(RequestNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleRequestNotFound(RequestNotFoundException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, "Request could not be found: " + ex.getMessage());
     }
 
     private ResponseEntity<ApiResponse<Void>> buildResponse(HttpStatus status, String message) {
@@ -43,3 +44,4 @@ public class ClubExceptionHandler {
         return ResponseEntity.status(status).body(response);
     }
 }
+

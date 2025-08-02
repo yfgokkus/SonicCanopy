@@ -1,5 +1,6 @@
 package com.example.SonicCanopy.controller;
 
+import com.example.SonicCanopy.dto.response.ApiResponse;
 import com.example.SonicCanopy.dto.user.CreateUserRequestDto;
 import com.example.SonicCanopy.dto.user.UserDto;
 import com.example.SonicCanopy.mapper.UserMapper;
@@ -29,24 +30,25 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserDto> createUser(@Valid @RequestBody CreateUserRequestDto request) {
+    public ResponseEntity<ApiResponse<UserDto>> createUser(@Valid @RequestBody CreateUserRequestDto request) {
         User user = userService.createUser(request);
         UserDto response = mapper.toUserDto(user);
 
         log.info("User '{}' successfully created", request.username());
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success("User successfully created", response));
     }
 
-    @GetMapping("/users/me")
-    public ResponseEntity<UserDto> getCurrentUser(@AuthenticationPrincipal User user) {
-        User userDromDb = userService.getByUsername(user.getUsername());
-        return ResponseEntity.ok(mapper.toUserDto(userDromDb));
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserDto>> getCurrentUser(@AuthenticationPrincipal User user) {
+        User userFromDb = userService.getByUsername(user.getUsername());
+        UserDto response = mapper.toUserDto(userFromDb);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @GetMapping("/admin")
-    public String getAdminString(){
-        return "This is the Admin";
+    public ResponseEntity<ApiResponse<String>> getAdminString() {
+        return ResponseEntity.ok(ApiResponse.success("Access granted"));
     }
-
 }
-

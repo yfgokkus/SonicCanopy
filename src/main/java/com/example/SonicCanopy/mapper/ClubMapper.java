@@ -8,8 +8,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ClubMapper {
-
-
     public ClubDto toDto(Club club) {
         if (club == null) return null;
 
