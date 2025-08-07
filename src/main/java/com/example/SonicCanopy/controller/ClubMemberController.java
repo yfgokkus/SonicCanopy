@@ -1,5 +1,6 @@
 package com.example.SonicCanopy.controller;
 
+import com.example.SonicCanopy.dto.club.ClubDto;
 import com.example.SonicCanopy.dto.clubMember.ClubMemberDto;
 import com.example.SonicCanopy.dto.response.ApiResponse;
 import com.example.SonicCanopy.entities.ClubMember;
@@ -12,7 +13,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -33,13 +33,19 @@ public class ClubMemberController {
         return ResponseEntity.ok(ApiResponse.success("Join request submitted"));
     }
 
-    @DeleteMapping("/me")
+    @DeleteMapping("/members/me/leave")
     public ResponseEntity<ApiResponse<String>> leaveClub(
             @PathVariable Long clubId,
             @AuthenticationPrincipal User user) {
 
         clubMemberService.leaveClub(clubId, user);
         return ResponseEntity.ok(ApiResponse.success("Leave request submitted"));
+    }
+
+    @PostMapping("/members/{userId}/kick")
+    public ResponseEntity<ApiResponse<String>> kickMember(@PathVariable Long clubId, @PathVariable Long userId, @AuthenticationPrincipal User user) {
+        clubMemberService.kickMember(clubId, userId, user);
+        return ResponseEntity.ok(ApiResponse.success("User has been kicked from the club"));
     }
 
     @GetMapping("/join-requests")

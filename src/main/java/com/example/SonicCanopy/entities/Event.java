@@ -24,7 +24,7 @@ public class Event {
     private String description;
 
     @Column(nullable = false)
-    private LocalDateTime eventDate;
+    private Long eventDurationMs;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
@@ -37,7 +37,6 @@ public class Event {
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(fullName = "spotify_content_id")
-//    private SpotifyContent content;
+    @Column(nullable = false)
+    private String SpotifyContentId;
 }

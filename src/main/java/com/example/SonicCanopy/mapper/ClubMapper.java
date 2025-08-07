@@ -6,8 +6,11 @@ import com.example.SonicCanopy.entities.Club;
 import com.example.SonicCanopy.entities.User;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 public class ClubMapper {
+
     public ClubDto toDto(Club club) {
         if (club == null) return null;
 
@@ -21,6 +24,11 @@ public class ClubMapper {
         );
     }
 
+    public List<ClubDto> toDtoList(List<Club> members) {
+        return members.stream()
+                .map(this::toDto)
+                .toList();
+    }
 
     public Club toEntity(CreateClubRequestDto dto, User creator) {
         if (dto == null) return null;

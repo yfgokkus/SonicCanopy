@@ -24,13 +24,11 @@ import java.util.stream.Collectors;
 public class ClubService  {
 
     private final ClubRepository clubRepository;
-    private final ClubMemberRepository clubMemberRepository;
     private final ClubMapper clubMapper;
     private final FirebaseStorageService firebaseStorageService;
 
-    public ClubService(ClubRepository clubRepository, ClubMemberRepository clubMemberRepository, ClubMapper clubMapper, FirebaseStorageService firebaseStorageService) {
+    public ClubService(ClubRepository clubRepository, ClubMapper clubMapper, FirebaseStorageService firebaseStorageService) {
         this.clubRepository = clubRepository;
-        this.clubMemberRepository = clubMemberRepository;
         this.clubMapper = clubMapper;
         this.firebaseStorageService = firebaseStorageService;
     }
@@ -98,8 +96,7 @@ public class ClubService  {
         }
     }
 
-    public ClubSearchResultDto searchClubs(String query, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
+    public ClubSearchResultDto searchClubs(String query, Pageable  pageable) {
         Page<Club> resultPage = clubRepository
                 .findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(query, query, pageable);
 
@@ -117,11 +114,6 @@ public class ClubService  {
                 resultPage.isFirst(),
                 resultPage.isLast()
         );
-    }
-
-    public List<ClubDto> getUserClubs(Long userId) {
-        List<Club> clubs = clubMemberRepository.findClubsByUserId(userId);
-        return clubs.stream().map(clubMapper::toDto).toList();
     }
 
 }
