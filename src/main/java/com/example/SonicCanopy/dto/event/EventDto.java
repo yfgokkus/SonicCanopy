@@ -1,7 +1,11 @@
 package com.example.SonicCanopy.dto.event;
 
+import com.example.SonicCanopy.dto.spotify.SpotifyContentDto;
+import lombok.Builder;
+
 import java.time.LocalDateTime;
 
+@Builder
 public record EventDto(
         Long id,
         String name,
@@ -13,11 +17,5 @@ public record EventDto(
         Long createdById,
 
         // Spotify content info (nullable)
-        String spotifyContentId,
-        String spotifyContentType,
-        String spotifyContentName,
-        Integer spotifyContentLength,
-        String spotifyContentArtist,
-        String spotifyContentImageUrl,
-        String spotifyContentReleaseDate
+        SpotifyContentDto spotifyContent
 ) {}

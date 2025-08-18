@@ -36,14 +36,32 @@ public class SpotifyClient {
                 .bodyToMono(JsonNode.class)
                 .block();
     }
-    public JsonNode getAlbumById(String albumId) {
+
+    public JsonNode getAlbum(String id) {
+        return requestBuilder("albums", id);
+    }
+
+    public JsonNode getTrack(String id) {
+        return requestBuilder("tracks", id);
+    }
+
+    public JsonNode getPlaylist(String id) {
+        return requestBuilder("playlists", id);
+    }
+
+    public JsonNode getArtist(String id) {
+        return requestBuilder("artists", id);
+    }
+
+    private JsonNode requestBuilder(String type, String id){
         String token = authService.getAccessToken();
 
         return spotifyClient.get()
-                .uri("/albums/{id}", albumId)
+                .uri("/{type}/{id}",type, id)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .retrieve()
                 .bodyToMono(JsonNode.class)
                 .block();
     }
+
 }

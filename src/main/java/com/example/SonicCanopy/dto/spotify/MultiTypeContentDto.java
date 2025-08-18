@@ -10,4 +10,5 @@ public record MultiTypeContentDto(
         List<AlbumDto> albums,
         List<ArtistDto> artists,
         List<PlaylistDto> playlists
-) {}
+) {
+}

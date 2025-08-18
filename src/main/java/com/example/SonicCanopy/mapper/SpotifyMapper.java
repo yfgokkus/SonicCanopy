@@ -1,124 +1,168 @@
 package com.example.SonicCanopy.mapper;
 
 import com.example.SonicCanopy.dto.spotify.*;
-import com.example.SonicCanopy.service.spotify.SpotifyClient;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.StreamSupport;
 
 @Component
 public class SpotifyMapper {
 
-    private final SpotifyClient spotifyClient;
-
-    public SpotifyMapper(SpotifyClient spotifyClient) {
-        this.spotifyClient = spotifyClient;
-    }
-
-    public List<TrackDto> mapTracks(JsonNode response) {
-        JsonNode items = response.path("tracks").path("items");
-        return StreamSupport.stream(items.spliterator(), false)
-                .map(track -> new TrackDto(
-                        track.path("id").asText(),
-                        track.path("name").asText(),
-                        getFirstArtist(track.path("artists")),
-                        track.path("album").path("name").asText(),
-                        getImageUrl(track.path("album").path("images")),
-                        track.path("external_urls").path("spotify").asText(),
-                        track.path("duration_ms").asInt(),
-                        track.path("album").path("release_date").asText(),
-                        track.path("preview_url").isNull() ? null : track.path("preview_url").asText()
-                ))
-                .toList();
-    }
-
     public PagedResponse<?> mapToPagedResponse(String type, JsonNode result, int offset, int limit, int total) {
         return switch (type) {
-            case "track" -> new PagedResponse<>(mapTracks(result), offset, limit, total);
-            case "album" -> new PagedResponse<>(mapAlbums(result), offset, limit, total);
-            case "artist" -> new PagedResponse<>(mapArtists(result), offset, limit, total);
-            case "playlist" -> new PagedResponse<>(mapPlaylists(result), offset, limit, total);
+            case "track" -> new PagedResponse<>(toTrackDtoList(result), offset, limit, total);
+            case "album" -> new PagedResponse<>(toAlbumDtoList(result), offset, limit, total);
+            case "artist" -> new PagedResponse<>(toArtistDtoList(result), offset, limit, total);
+            case "playlist" -> new PagedResponse<>(toPlaylistDtoList(result), offset, limit, total);
             default -> throw new IllegalArgumentException("Unsupported type: " + type);
         };
     }
 
-    public List<AlbumDto> mapAlbums(JsonNode searchResponse) {
-        JsonNode items = searchResponse.path("albums").path("items");
+    public List<TrackDto> toTrackDtoList(JsonNode node) {
+        if (node == null) return List.of();
 
-        return StreamSupport.stream(items.spliterator(), false)
-                .map(album -> {
-                    String id = album.path("id").asText();
-
-                    long duration = calculateAlbumDuration(id);
-
-                    return new AlbumDto(
-                            id,
-                            album.path("name").asText(),
-                            album.path("album_type").asText(),
-                            getAllArtists(album.path("artists")),
-                            getImageUrl(album.path("images")),
-                            album.path("release_date").asText(),
-                            album.path("total_tracks").asInt(),
-                            duration,
-                            album.path("external_urls").path("spotify").asText()
-                    );
-                })
-                .toList();
-    }
-
-    public List<ArtistDto> mapArtists(JsonNode response) {
-        JsonNode items = response.path("artists").path("items");
-        return StreamSupport.stream(items.spliterator(), false)
-                .map(artist -> new ArtistDto(
-                        artist.path("id").asText(),
-                        artist.path("name").asText(),
-                        artist.path("popularity").asInt(),
-                        getImageUrl(artist.path("images")),
-                        artist.path("external_urls").path("spotify").asText()
-                ))
-                .toList();
-    }
-
-    public List<PlaylistDto> mapPlaylists(JsonNode response) {
-        JsonNode items = response.path("playlists").path("items");
-        return StreamSupport.stream(items.spliterator(), false)
-                .map(playlist -> new PlaylistDto(
-                        playlist.path("id").asText(),
-                        playlist.path("name").asText(),
-                        playlist.path("description").asText(),
-                        getImageUrl(playlist.path("images")),
-                        playlist.path("external_urls").path("spotify").asText(),
-                        playlist.path("owner").path("display_name").asText()
-                ))
-                .toList();
-    }
-
-    private long calculateAlbumDuration(String id) {
-        JsonNode detailedAlbum = spotifyClient.getAlbumById(id);
-        JsonNode tracks = detailedAlbum.path("tracks").path("items");
+        JsonNode tracks = node.path("tracks").path("items");
+        if (!tracks.isArray() || tracks.isEmpty()) {
+            return List.of();
+        }
 
         return StreamSupport.stream(tracks.spliterator(), false)
-                .mapToLong(track -> track.path("duration_ms").asLong())
-                .sum();
+                .map(this::toTrackDto)
+                .toList();
     }
 
-    private String getFirstArtist(JsonNode artistsNode) {
-        return (artistsNode.isArray() && !artistsNode.isEmpty())
-                ? artistsNode.get(0).path("name").asText()
-                : "Unknown Artist";
+    public List<AlbumDto> toAlbumDtoList(JsonNode node) {
+        if (node == null) return List.of();
+
+        JsonNode albums =  node.path("albums").path("items");
+        if (!albums.isArray() || albums.isEmpty()) {
+            return List.of();
+        }
+        return StreamSupport.stream(albums.spliterator(), false)
+                .map(this::toAlbumDto)
+                .toList();
     }
 
-    private List<String> getAllArtists(JsonNode artistsNode) {
+    public List<ArtistDto> toArtistDtoList(JsonNode node) {
+        if (node == null) return List.of();
+
+        JsonNode artists =  node.path("artists").path("items");
+        if (!artists.isArray() || artists.isEmpty()) {
+            return List.of();
+        }
+        return StreamSupport.stream(artists.spliterator(), false)
+                .map(this::toArtistDto)
+                .toList();
+    }
+
+    public List<PlaylistDto> toPlaylistDtoList(JsonNode node) {
+        if (node == null) return List.of();
+
+        JsonNode playlists =  node.path("playlists").path("items");
+        if (!playlists.isArray() || playlists.isEmpty()) {
+            return List.of();
+        }
+        return StreamSupport.stream(playlists.spliterator(), false)
+                .map(this::toPlaylistDto)
+                .toList();
+    }
+
+    public TrackDto toTrackDto(JsonNode track) {
+        List<String> artists = getArtists(track.path("artists"));
+        List<Image> images = getImages(track.path("album").path("images"));
+        return TrackDto.builder()
+                .name(track.path("name").asText("NaN"))
+                .uri(track.path("uri").asText(null))
+                .images(images)
+                .artists(artists)
+                .albumType(track.path("album").path("album_type").asText(null))
+                .albumName(track.path("album").path("name").asText(null))
+                .releaseDate(track.path("album").path("release_date").asText(null))
+                .trackNumber(track.path("track_number").asInt())
+                .duration(track.path("duration").asLong())
+                .build();
+    }
+
+    public AlbumDto toAlbumDto(JsonNode album) {
+        List<String> artists = getArtists(album.path("artists"));
+        List<Image> images = getImages(album.path("images"));
+        return AlbumDto.builder()
+                .name(album.path("name").asText("NaN"))
+                .uri(album.path("uri").asText(null))
+                .images(images)
+                .artists(artists)
+                .tracks(toTrackDtoList(album))
+                .releaseDate(album.path("release_date").asText(null))
+                .totalTracks(album.path("total_tracks").asInt())
+                .duration(sumOfDurations(album.path("tracks")))
+                .build();
+    }
+
+    public ArtistDto toArtistDto(JsonNode artist) {
+        List<Image> images = getImages(artist.path("images"));
+        return ArtistDto.builder()
+                .name(artist.path("name").asText("unknown"))
+                .uri(artist.path("uri").asText(null))
+                .images(images)
+                .followers(artist.path("followers").path("total").asInt())
+                .build();
+    }
+
+    public PlaylistDto toPlaylistDto(JsonNode playlist) {
+        List<Image> images = getImages(playlist.path("images"));
+        return PlaylistDto.builder()
+                .name(playlist.path("name").asText("NaN"))
+                .uri(playlist.path("uri").asText(null))
+                .images(images)
+                .ownerName(playlist.path("owner").path("display_name").asText("unknown"))
+                .ownerUrl(playlist.path("owner").path("external_urls").path("spotify").asText(null))
+                .tracks(toTrackDtoList(playlist))
+                .duration(sumOfDurations(playlist.path("tracks")))
+                .build();
+    }
+
+    //TODO: only sums first page of tracks (items) — if album has >50 tracks, you’d need pagination.
+    private long sumOfDurations(JsonNode tracksNode) {
+        if (tracksNode == null
+                || !tracksNode.has("items")
+                || !tracksNode.path("items").isArray()
+                || tracksNode.path("items").isEmpty()) {
+            return 0L;
+        }
+
+        long totalDuration = 0L;
+        for (JsonNode track : tracksNode.path("items")) {
+            totalDuration += track.path("duration_ms").asLong(0L);
+        }
+
+        return totalDuration;
+    }
+
+    private List<String> getArtists(JsonNode artistsNode) {
         return StreamSupport.stream(artistsNode.spliterator(), false)
                 .map(a -> a.path("name").asText())
                 .toList();
     }
 
-    private String getImageUrl(JsonNode imagesNode) {
-        return (imagesNode.isArray() && !imagesNode.isEmpty())
-                ? imagesNode.get(0).path("url").asText()
-                : null;
+    private List<Image> getImages(JsonNode imagesNode) {
+        if (imagesNode == null || !imagesNode.isArray() || imagesNode.isEmpty()) {
+            return List.of(); // empty list if missing
+        }
+
+        List<Image> images = new ArrayList<>();
+        for (JsonNode img : imagesNode) {
+            String url = img.path("url").asText(null); // null if missing
+            int height = img.path("height").asInt(0);  // 0 if missing
+            int width  = img.path("width").asInt(0);   // 0 if missing
+
+            if (url != null) {
+                images.add(new Image(url, height, width));
+            }
+        }
+
+        return images;
     }
 }

@@ -1,5 +1,6 @@
-package com.example.SonicCanopy.security;
+package com.example.SonicCanopy.config;
 
+import com.example.SonicCanopy.service.auth.JwtAuthFilter;
 import com.example.SonicCanopy.service.app.UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

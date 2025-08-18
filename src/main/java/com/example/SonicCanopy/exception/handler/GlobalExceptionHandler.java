@@ -2,6 +2,7 @@ package com.example.SonicCanopy.exception.handler;
 
 import com.example.SonicCanopy.controller.ClubController;
 import com.example.SonicCanopy.controller.ClubMemberController;
+import com.example.SonicCanopy.controller.EventController;
 import com.example.SonicCanopy.controller.UserController;
 import com.example.SonicCanopy.dto.response.ApiResponse;
 import com.example.SonicCanopy.exception.club.*;
@@ -18,7 +19,7 @@ import java.util.Map;
 
 @RestControllerAdvice(
         basePackages = "com.example.SonicCanopy.controller",
-        assignableTypes = { ClubController.class, ClubMemberController.class, UserController.class }
+        assignableTypes = { ClubController.class, ClubMemberController.class, UserController.class, EventController.class}
 )
 @Slf4j
 public class GlobalExceptionHandler {
@@ -57,7 +58,6 @@ public class GlobalExceptionHandler {
         log.error("Unhandled exception: {}", ex.getMessage(), ex);
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
     }
-
 
     private ResponseEntity<ApiResponse<Void>> buildResponse(HttpStatus status, String message) {
         ApiResponse<Void> response = ApiResponse.failure(message, Map.of(

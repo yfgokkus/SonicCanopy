@@ -1,6 +1,5 @@
-package com.example.SonicCanopy.security;
+package com.example.SonicCanopy.service.auth;
 
-import com.example.SonicCanopy.service.auth.JwtService;
 import com.example.SonicCanopy.service.app.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

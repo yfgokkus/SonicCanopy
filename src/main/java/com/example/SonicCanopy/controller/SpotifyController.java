@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/spotify")
@@ -21,10 +22,10 @@ public class SpotifyController {
 
     @GetMapping("/search")
     public ResponseEntity<?> searchContent(@RequestParam String q,
-                                           @RequestParam(required = false) List<String> type,
+                                           @RequestParam(required = false) Set<String> typeSet,
                                            @RequestParam(defaultValue = "0") int offset,
                                            @RequestParam(defaultValue = "10") int limit) {
-        Object result = spotifySearchManager.search(q, type, offset, limit);
+        Object result = spotifySearchManager.search(q, typeSet, offset, limit);
         return ResponseEntity.ok(result);
     }
 

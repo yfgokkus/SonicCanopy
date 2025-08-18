@@ -37,4 +37,9 @@ public class ClubMember {
     private JoinStatus status;
 
     private LocalDateTime joinedAt;
+
+    @PrePersist
+    public void prePersist() {
+        this.joinedAt = LocalDateTime.now();
+    }
 }

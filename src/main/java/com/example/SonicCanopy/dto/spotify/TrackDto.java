@@ -1,13 +1,20 @@
 package com.example.SonicCanopy.dto.spotify;
 
-public record TrackDto(
-        String id,
-        String name,
-        String artist,
-        String album,
-        String imageUrl,
-        String spotifyUrl,
-        int durationMs,
-        String releaseDate,
-        String previewUrl // nullable
-) {}
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+
+import java.util.List;
+
+@SuperBuilder
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
+public class TrackDto extends SpotifyContentDto{
+    private List<String> artists;
+    private String albumType; //album or single
+    private String albumName; //nullable
+    private String releaseDate; //if from album, album release date
+    private long duration;
+    private int trackNumber;
+}

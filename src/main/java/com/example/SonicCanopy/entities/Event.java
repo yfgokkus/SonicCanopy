@@ -37,6 +37,11 @@ public class Event {
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
 
-    @Column(nullable = false)
-    private String SpotifyContentId;
+    @Column
+    private String spotifyContentUri;
+
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = LocalDateTime.now();
+    }
 }

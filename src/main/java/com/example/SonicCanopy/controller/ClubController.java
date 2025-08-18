@@ -28,7 +28,7 @@ public class ClubController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<ClubDto>> createClub(
-            @ModelAttribute @Valid CreateClubRequestDto dto,
+            @RequestBody @Valid CreateClubRequestDto dto,
             @AuthenticationPrincipal User user) {
 
         ClubDto created = clubService.createClub(dto, user);

@@ -13,9 +13,8 @@ import java.util.List;
 @NoArgsConstructor
 @Getter
 @Setter
-public class PlaylistDto extends SpotifyContentDto{
-    private String ownerName;
-    private String ownerUrl;
-    private List<TrackDto> tracks;
-    private long duration;
+public class SpotifyContentDto {
+    private String name;
+    private String uri;
+    List<Image> images;
 }

@@ -1,9 +1,16 @@
 package com.example.SonicCanopy.dto.spotify;
 
-public record ArtistDto(
-        String id,
-        String name,
-        int popularity,
-        String imageUrl,
-        String spotifyUrl
-) {}
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
+
+@SuperBuilder
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
+public class ArtistDto extends SpotifyContentDto{
+    private int followers;
+}

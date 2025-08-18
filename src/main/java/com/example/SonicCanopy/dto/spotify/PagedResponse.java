@@ -19,5 +19,4 @@ public class PagedResponse<T> {
         this.total = total;
         this.hasNext = offset + limit < total;
     }
-
 }
