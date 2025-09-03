@@ -1,11 +1,12 @@
 package com.example.SonicCanopy.controller;
 
-import com.example.SonicCanopy.dto.club.ClubDto;
-import com.example.SonicCanopy.dto.club.ClubSearchResultDto;
-import com.example.SonicCanopy.dto.club.CreateClubRequestDto;
-import com.example.SonicCanopy.dto.response.ApiResponse;
-import com.example.SonicCanopy.entities.User;
+import com.example.SonicCanopy.domain.dto.club.ClubDto;
+import com.example.SonicCanopy.domain.dto.club.CreateClubRequestDto;
+import com.example.SonicCanopy.domain.dto.global.ApiResponse;
+import com.example.SonicCanopy.domain.dto.global.PagedResponse;
+import com.example.SonicCanopy.domain.entity.User;
 import com.example.SonicCanopy.service.app.ClubService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +43,7 @@ public class ClubController {
     ) {
         clubService.deleteClub(clubId, user);
         return ResponseEntity.ok(ApiResponse.success("Club deleted successfully"));
+
     }
 
     @PostMapping("/{clubId}/profile-picture")
@@ -52,6 +54,7 @@ public class ClubController {
     ) {
         String imageUrl = clubService.updateClubImage(clubId, file, user);
         return ResponseEntity.ok(ApiResponse.success("Profile picture updated", imageUrl));
+
     }
 
     @DeleteMapping("/{clubId}/profile-picture")
@@ -61,14 +64,20 @@ public class ClubController {
     ) {
         clubService.deleteClubImage(clubId, requester);
         return ResponseEntity.ok(ApiResponse.success("Profile picture deleted"));
+
     }
 
     @GetMapping("/search")
-    public ResponseEntity<ApiResponse<ClubSearchResultDto>> searchClubs(
+    public ResponseEntity<ApiResponse<PagedResponse<ClubDto>>> searchClubs(
             @RequestParam String query,
-            @PageableDefault(page = 0, size = 10) Pageable pageable
+            @PageableDefault(page = 0, size = 10) Pageable pageable,
+            HttpServletRequest request
     ) {
-        ClubSearchResultDto response = clubService.searchClubs(query, pageable);
+        PagedResponse<ClubDto> response = clubService.searchClubs(query, pageable, request);
+
         return ResponseEntity.ok(ApiResponse.success("Search results", response));
     }
+
+
+
 }

@@ -1,13 +1,14 @@
 package com.example.SonicCanopy.controller;
 
-import com.example.SonicCanopy.service.spotify.SpotifySearchManager;
-import org.springframework.http.ResponseEntity;
+import com.example.SonicCanopy.domain.dto.global.ApiResponse;
+import com.example.SonicCanopy.domain.dto.spotify.MultiTypeContentDto;
+import com.example.SonicCanopy.domain.dto.spotify.PagedSpotifyContent;
+import com.example.SonicCanopy.service.infrastructure.spotify.SpotifySearchManager;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 import java.util.Set;
 
 @RestController
@@ -21,14 +22,20 @@ public class SpotifyController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<?> searchContent(@RequestParam String q,
+    public ApiResponse<?> searchContent(@RequestParam String q,
                                            @RequestParam(required = false) Set<String> typeSet,
                                            @RequestParam(defaultValue = "0") int offset,
                                            @RequestParam(defaultValue = "10") int limit) {
-        Object result = spotifySearchManager.search(q, typeSet, offset, limit);
-        return ResponseEntity.ok(result);
+        PagedSpotifyContent<?> result = spotifySearchManager.search(q, typeSet, offset, limit);
+        return ApiResponse.success(result);
     }
 
+    @GetMapping("/preview")
+    public ApiResponse<MultiTypeContentDto> getSearchPreview(@RequestParam String q,
+                                                                             @RequestParam(required = false) Set<String> typeSet) {
+        MultiTypeContentDto result = spotifySearchManager.shallowSearch(q, typeSet);
+        return ApiResponse.success(result);
+    }
 
 //    @GetMapping("/search")
 //    public ResponseEntity<JsonNode> searchContent(@RequestParam String q,

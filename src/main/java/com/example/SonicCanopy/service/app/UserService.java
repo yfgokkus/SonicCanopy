@@ -1,9 +1,9 @@
 package com.example.SonicCanopy.service.app;
 
-import com.example.SonicCanopy.dto.user.CreateUserRequestDto;
-import com.example.SonicCanopy.exception.user.UserCreationException;
-import com.example.SonicCanopy.exception.user.UsernameAlreadyExistsException;
-import com.example.SonicCanopy.entities.User;
+import com.example.SonicCanopy.domain.dto.user.CreateUserRequestDto;
+import com.example.SonicCanopy.domain.exception.user.UserCreationException;
+import com.example.SonicCanopy.domain.exception.user.UsernameAlreadyExistsException;
+import com.example.SonicCanopy.domain.entity.User;
 import com.example.SonicCanopy.repository.UserRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.userdetails.UserDetails;

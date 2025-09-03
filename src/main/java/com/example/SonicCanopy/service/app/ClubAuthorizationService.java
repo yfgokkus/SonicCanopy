@@ -1,8 +1,8 @@
 package com.example.SonicCanopy.service.app;
 
-import com.example.SonicCanopy.entities.*;
-import com.example.SonicCanopy.exception.club.UnauthorizedActionException;
-import com.example.SonicCanopy.exception.clubMember.ClubMemberDoesNotExistException;
+import com.example.SonicCanopy.domain.entity.*;
+import com.example.SonicCanopy.domain.exception.club.UnauthorizedActionException;
+import com.example.SonicCanopy.domain.exception.clubMember.ClubMemberDoesNotExistException;
 import com.example.SonicCanopy.repository.ClubMemberRepository;
 import org.springframework.stereotype.Service;
 
@@ -15,37 +15,32 @@ public class ClubAuthorizationService {
         this.clubMemberRepository = clubMemberRepository;
     }
 
-    private ClubMember isMember(Long clubId, Long userId) {
-        ClubMember member = clubMemberRepository.findById(new ClubMemberId(userId, clubId))
-                .orElseThrow(() -> new ClubMemberDoesNotExistException("User is not a member of this club"));
-
-        JoinStatus status = member.getStatus();
-
-        if (status !=  JoinStatus.APPROVED) {
-            throw new UnauthorizedActionException("Not authorized to approve this request");
-        }
-
-        return member;
+    public boolean isMember(Long clubId, Long userId) {
+        return clubMemberRepository.existsById(new ClubMemberId(userId, clubId))
+                && clubMemberRepository.findById(new ClubMemberId(userId, clubId))
+                .map(member -> member.getStatus() == JoinStatus.APPROVED)
+                .orElse(false);
     }
 
     public void authorizeMemberManagement(Long clubId, User requester) {
-        ClubMember member = isMember(clubId, requester.getId());
+        ClubMember member = getMemberOrThrow(clubId, requester.getId());
 
-        ClubRole role = member.getClubRole();
-
-        if (!role.canManageMembers()) {
+        if (!member.getClubRole().canManageMembers()) {
             throw new UnauthorizedActionException("Not authorized to approve this request");
         }
     }
 
-    public void authorizeEventManagement(Long clubId, User requester){
-        ClubMember member = isMember(clubId, requester.getId());
+    public void authorizeEventManagement(Long clubId, User requester) {
+        ClubMember member = getMemberOrThrow(clubId, requester.getId());
 
-        ClubRole role = member.getClubRole();
-
-        if (!role.canManageEvents()) {
-            throw new UnauthorizedActionException("Not authorized to approve this request");
+        if (!member.getClubRole().canManageEvents()) {
+            throw new UnauthorizedActionException("Not authorized to manage events");
         }
     }
-    
+
+    private ClubMember getMemberOrThrow(Long clubId, Long userId) {
+        return clubMemberRepository.findById(new ClubMemberId(userId, clubId))
+                .orElseThrow(() -> new ClubMemberDoesNotExistException("User is not a member of this club"));
+    }
+
 }

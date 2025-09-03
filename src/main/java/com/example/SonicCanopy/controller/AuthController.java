@@ -1,10 +1,10 @@
 package com.example.SonicCanopy.controller;
 
-import com.example.SonicCanopy.dto.auth.AuthRequestDto;
-import com.example.SonicCanopy.dto.auth.AuthResponseDto;
-import com.example.SonicCanopy.dto.auth.RefreshTokenRequestDto;
-import com.example.SonicCanopy.dto.response.ApiResponse;
-import com.example.SonicCanopy.service.auth.AuthenticationService;
+import com.example.SonicCanopy.domain.dto.auth.AuthRequestDto;
+import com.example.SonicCanopy.domain.dto.auth.AuthResponseDto;
+import com.example.SonicCanopy.domain.dto.auth.RefreshTokenRequestDto;
+import com.example.SonicCanopy.domain.dto.global.ApiResponse;
+import com.example.SonicCanopy.security.auth.AuthenticationService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

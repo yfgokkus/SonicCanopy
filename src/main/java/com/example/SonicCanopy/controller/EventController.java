@@ -1,20 +1,25 @@
 package com.example.SonicCanopy.controller;
 
-import com.example.SonicCanopy.dto.club.ClubDto;
-import com.example.SonicCanopy.dto.event.CreateEventRequestDto;
-import com.example.SonicCanopy.dto.event.EventDto;
-import com.example.SonicCanopy.dto.event.UpdateEventRequestDto;
-import com.example.SonicCanopy.dto.response.ApiResponse;
-import com.example.SonicCanopy.entities.User;
+import com.example.SonicCanopy.domain.dto.event.CreateEventRequestDto;
+import com.example.SonicCanopy.domain.dto.event.EventDto;
+import com.example.SonicCanopy.domain.dto.event.UpdateEventRequestDto;
+import com.example.SonicCanopy.domain.dto.global.ApiResponse;
+import com.example.SonicCanopy.domain.dto.global.PagedResponse;
+import com.example.SonicCanopy.domain.entity.User;
 import com.example.SonicCanopy.service.app.EventService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import java.net.URI;
 
 @RestController
-@RequestMapping("/events/{clubId}")
+@RequestMapping("/clubs/{clubId}/events")
 @Slf4j
 public class EventController {
 
@@ -24,14 +29,46 @@ public class EventController {
         this.eventService = eventService;
     }
 
+    @GetMapping("{eventId}")
+    public ResponseEntity<ApiResponse<EventDto>> getEventByIdAndClubId(
+            @PathVariable Long clubId,
+            @PathVariable Long eventId,
+            @AuthenticationPrincipal User user
+    ){
+        EventDto eventDto = eventService.getEventByIdAndClubId(clubId, eventId, user);
+
+        return ResponseEntity.ok(ApiResponse.success("Event found", eventDto));
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<PagedResponse<EventDto>>> listEvents(
+            @PathVariable Long clubId,
+            Pageable pageable,
+            @AuthenticationPrincipal User user,
+            HttpServletRequest request
+    ) {
+        PagedResponse<EventDto> events = eventService.getClubEvents(clubId, user, pageable, request);
+        return ResponseEntity.ok(ApiResponse.success("Club events fetched", events));
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponse<EventDto>> createEvent(
             @PathVariable Long clubId,
             @RequestBody @Valid CreateEventRequestDto request,
             @AuthenticationPrincipal User user
     ) {
-        EventDto event = eventService.createEvent(request, user);
-        return ResponseEntity.ok(ApiResponse.success("Event created successfully", event));
+        EventDto event = eventService.createEvent(clubId, request, user);
+
+        // Build the Location URI for the new event resource
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{eventId}")
+                .buildAndExpand(event.id())
+                .toUri();
+
+        return ResponseEntity
+                .created(location)
+                .body(ApiResponse.success("Event created successfully", event));
     }
 
     @PutMapping("{eventId}")
@@ -41,18 +78,10 @@ public class EventController {
             @RequestBody @Valid UpdateEventRequestDto request,
             @AuthenticationPrincipal User user
     ) {
-        // ensure DTO carries the right IDs
-        UpdateEventRequestDto updateRequest = new UpdateEventRequestDto(
-                eventId,
-                clubId,
-                request.name(),
-                request.description(),
-                request.eventDurationMs(),
-                request.spotifyContentUri()
-        );
 
-        EventDto event = eventService.updateEvent(updateRequest, user);
-        return ResponseEntity.ok(ApiResponse.success("Event updated successfully", event));
+        EventDto event = eventService.updateEvent(clubId, eventId, request, user);
+        return ResponseEntity
+                .ok(ApiResponse.success("Event updated successfully", event));
     }
 
     @DeleteMapping("{eventId}")
@@ -62,7 +91,9 @@ public class EventController {
             @AuthenticationPrincipal User user
     ) {
         eventService.deleteEvent(clubId, eventId, user);
-        return ResponseEntity.ok(ApiResponse.success("Event deleted successfully"));
+        return ResponseEntity
+                .ok(ApiResponse.success("Event deleted successfully"));
     }
+
 }
 

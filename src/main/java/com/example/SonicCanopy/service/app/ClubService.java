@@ -1,24 +1,23 @@
 package com.example.SonicCanopy.service.app;
 
-import com.example.SonicCanopy.dto.club.ClubDto;
-import com.example.SonicCanopy.dto.club.ClubSearchResultDto;
-import com.example.SonicCanopy.dto.club.CreateClubRequestDto;
-import com.example.SonicCanopy.entities.Club;
-import com.example.SonicCanopy.entities.User;
-import com.example.SonicCanopy.exception.club.ClubNotFoundException;
-import com.example.SonicCanopy.exception.club.UnauthorizedActionException;
-import com.example.SonicCanopy.mapper.ClubMapper;
-import com.example.SonicCanopy.repository.ClubMemberRepository;
+import com.example.SonicCanopy.domain.dto.club.ClubDto;
+import com.example.SonicCanopy.domain.dto.club.CreateClubRequestDto;
+import com.example.SonicCanopy.domain.dto.global.PagedResponse;
+import com.example.SonicCanopy.domain.entity.Club;
+import com.example.SonicCanopy.domain.entity.User;
+import com.example.SonicCanopy.domain.exception.club.ClubNotFoundException;
+import com.example.SonicCanopy.domain.exception.club.UnauthorizedActionException;
+import com.example.SonicCanopy.domain.mapper.ClubMapper;
+import com.example.SonicCanopy.domain.util.PaginationUtils;
 import com.example.SonicCanopy.repository.ClubRepository;
-import com.example.SonicCanopy.service.firebase.concretes.FirebaseStorageService;
+import com.example.SonicCanopy.service.infrastructure.firebase.concretes.FirebaseStorageService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class ClubService  {
@@ -96,24 +95,14 @@ public class ClubService  {
         }
     }
 
-    public ClubSearchResultDto searchClubs(String query, Pageable  pageable) {
-        Page<Club> resultPage = clubRepository
+    public PagedResponse<ClubDto> searchClubs(String query, Pageable pageable, HttpServletRequest request) {
+        Page<Club> clubPage = clubRepository
                 .findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(query, query, pageable);
 
-        List<ClubDto> clubDtos = resultPage.getContent()
-                .stream()
-                .map(clubMapper::toDto)
-                .collect(Collectors.toList());
+        List<ClubDto> clubDtos = clubMapper.toDtoList(clubPage.getContent());
 
-        return new ClubSearchResultDto(
-                clubDtos,
-                resultPage.getNumber(),
-                resultPage.getSize(),
-                resultPage.getTotalPages(),
-                resultPage.getTotalElements(),
-                resultPage.isFirst(),
-                resultPage.isLast()
-        );
+        return PaginationUtils.buildPagedResponse(clubDtos, clubPage, request);
     }
+
 
 }

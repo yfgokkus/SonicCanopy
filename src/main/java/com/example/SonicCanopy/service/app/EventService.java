@@ -1,21 +1,30 @@
 package com.example.SonicCanopy.service.app;
 
-import com.example.SonicCanopy.dto.event.CreateEventRequestDto;
-import com.example.SonicCanopy.dto.event.EventDto;
-import com.example.SonicCanopy.dto.event.UpdateEventRequestDto;
-import com.example.SonicCanopy.dto.spotify.SpotifyContentDto;
-import com.example.SonicCanopy.entities.Club;
-import com.example.SonicCanopy.entities.Event;
-import com.example.SonicCanopy.entities.User;
-import com.example.SonicCanopy.exception.club.ClubNotFoundException;
-import com.example.SonicCanopy.mapper.EventMapper;
+import com.example.SonicCanopy.domain.dto.event.CreateEventRequestDto;
+import com.example.SonicCanopy.domain.dto.event.EventDto;
+import com.example.SonicCanopy.domain.dto.event.UpdateEventRequestDto;
+import com.example.SonicCanopy.domain.dto.global.PagedResponse;
+import com.example.SonicCanopy.domain.dto.spotify.SpotifyContentDto;
+import com.example.SonicCanopy.domain.entity.Club;
+import com.example.SonicCanopy.domain.entity.Event;
+import com.example.SonicCanopy.domain.entity.User;
+import com.example.SonicCanopy.domain.exception.club.ClubNotFoundException;
+import com.example.SonicCanopy.domain.exception.club.UnauthorizedActionException;
+import com.example.SonicCanopy.domain.exception.event.EventNotFoundException;
+import com.example.SonicCanopy.domain.mapper.EventMapper;
+import com.example.SonicCanopy.domain.util.SpotifyContentValidator;
 import com.example.SonicCanopy.repository.ClubRepository;
 import com.example.SonicCanopy.repository.EventRepository;
-import com.example.SonicCanopy.service.spotify.SpotifyContentService;
-import com.example.SonicCanopy.utils.SpotifyUriUtils;
-import jakarta.transaction.Transactional;
+import com.example.SonicCanopy.service.infrastructure.spotify.SpotifyContentService;
+import com.example.SonicCanopy.domain.util.SpotifyUriValidator;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -39,12 +48,11 @@ public class EventService {
         this.spotifyContentService = spotifyContentService;
     }
 
-    @Transactional
-    public EventDto createEvent(CreateEventRequestDto request, User requester) {
-        clubAuthorizationService.authorizeEventManagement(request.clubId(), requester);
+    public EventDto createEvent(Long clubId, CreateEventRequestDto request, User requester) {
+        clubAuthorizationService.authorizeEventManagement(clubId, requester);
 
-        Club club = clubRepository.findById(request.clubId())
-                .orElseThrow(() -> new ClubNotFoundException("Club not found"));
+        Club club = clubRepository.findById(clubId)
+                .orElseThrow(() -> new ClubNotFoundException("event cannot be created"));
 
         Event event = Event.builder()
                 .name(request.name())
@@ -57,12 +65,11 @@ public class EventService {
 
         event = eventRepository.save(event);
 
-        SpotifyContentDto spotifyContent = getSpotifyContentValidated(request.spotifyContentUri());
+        SpotifyContentDto spotifyContentDto = fetchAndValidateSpotifyContent(request.spotifyContentUri()); //returns null if URI is invalid or null
 
-        return eventMapper.toEventDto(event, spotifyContent);
+        return eventMapper.toDto(event, spotifyContentDto);
     }
 
-    @Transactional
     public void deleteEvent(long clubId, long eventId, User user) {
         clubAuthorizationService.authorizeEventManagement(clubId, user);
 
@@ -74,13 +81,12 @@ public class EventService {
         eventRepository.delete(event);
     }
 
-    @Transactional
-    public EventDto updateEvent(UpdateEventRequestDto request, User user) {
-        clubAuthorizationService.authorizeEventManagement(request.clubId(), user);
+    public EventDto updateEvent(Long clubId, Long eventId, UpdateEventRequestDto request, User user) {
+        clubAuthorizationService.authorizeEventManagement(clubId, user);
 
-        Event event = eventRepository.findByIdAndClubId(request.eventId(), request.clubId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Event " + request.eventId() + " does not belong to club " + request.clubId()
+        Event event = eventRepository.findByIdAndClubId(eventId, clubId)
+                .orElseThrow(() -> new EventNotFoundException(
+                        "Can't find event " + eventId + " in the club " + clubId
                 ));
 
         // Update mutable fields
@@ -89,24 +95,95 @@ public class EventService {
         event.setEventDurationMs(request.eventDurationMs());
         event.setSpotifyContentUri(request.spotifyContentUri());
 
+        // Explicit save for clarity
         event = eventRepository.save(event);
 
-        SpotifyContentDto spotifyContent = getSpotifyContentValidated(request.spotifyContentUri());
+        SpotifyContentDto spotifyContentDto = fetchAndValidateSpotifyContent(request.spotifyContentUri());
 
-        return eventMapper.toEventDto(event, spotifyContent);
+        return eventMapper.toDto(event, spotifyContentDto);
     }
 
-    private SpotifyContentDto getSpotifyContentValidated(String uri){
-        if (SpotifyUriUtils.isValid(uri)) {
-            try {
-                String id = SpotifyUriUtils.extractId(uri);
-                String type = SpotifyUriUtils.extractType(uri);
-                return spotifyContentService.getContent(id, type);
-            } catch (Exception ex) {
-                log.warn("Failed to fetch Spotify content error: {}", ex.getMessage());
-                return null;
-            }
+    public EventDto getEventByIdAndClubId(Long clubId, Long eventId, User user){
+        boolean isPrivate = eventRepository.isPrivate(clubId);
+
+        if(isPrivate && !clubAuthorizationService.isMember(clubId, user.getId())){
+            throw new UnauthorizedActionException("Given user is not a member of this club");
         }
-        return null;
+
+        Event event = eventRepository.findByIdAndClubId(eventId, clubId).orElseThrow(
+                () -> new EventNotFoundException("Event " + eventId + " not found in the club " + clubId)
+        );
+
+        SpotifyContentDto spotifyContent = fetchAndValidateSpotifyContent(event.getSpotifyContentUri());
+
+        return eventMapper.toDto(event, spotifyContent);
+    }
+
+    public PagedResponse<EventDto> getClubEvents(Long clubId, User user, Pageable pageable, HttpServletRequest request) {
+        boolean isPrivate = eventRepository.isPrivate(clubId);
+
+        if(isPrivate && !clubAuthorizationService.isMember(clubId, user.getId())){
+            throw new UnauthorizedActionException("Given user is not a member of this club");
+        }
+
+        Page<Event> eventPage = eventRepository.findAllByClubIdOrderByCreatedAtDesc(clubId, pageable);
+        List<String> uris = eventPage.stream()
+                .map(Event::getSpotifyContentUri)
+                .filter(Objects::nonNull)
+                .toList();
+
+        Map<String, SpotifyContentDto> contentMap = getSpotifyContentFromURIs(uris);
+
+        List<EventDto> eventDtoList = eventPage.stream()
+                .map(event -> {
+                    String uri = event.getSpotifyContentUri();
+                    SpotifyContentDto content = contentMap.get(uri);
+                    return eventMapper.toDto(event, content);
+                })
+                .toList();
+
+        return PagedResponse.of(
+                eventDtoList,
+                eventPage.getNumber(),
+                eventPage.getSize(),
+                eventPage.getTotalElements(),
+                eventPage.getTotalPages(),
+                request
+        );
+    }
+
+    private Map<String, SpotifyContentDto> getSpotifyContentFromURIs(List<String> uris) {
+        if (uris == null || uris.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        return uris.parallelStream()
+                .map(uri -> {
+                    SpotifyContentDto content = safeFetchContent(uri);
+                    return content != null ? Map.entry(uri, content) : null;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toConcurrentMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    private SpotifyContentDto safeFetchContent(String uri) {
+        try {
+            return fetchAndValidateSpotifyContent(uri); // hatalı veya invalid URI => null
+        } catch (Exception e) {
+            return null; // fail gracefully
+        }
+    }
+
+    private SpotifyContentDto fetchAndValidateSpotifyContent(String uri) {
+        if (!SpotifyUriValidator.isValid(uri)) return null;
+
+        String id = SpotifyUriValidator.extractId(uri);
+        String type = SpotifyUriValidator.extractType(uri);
+
+        SpotifyContentDto content = spotifyContentService.getContent(id, type);
+        //TODO: BATCH CALLS CAN BE INTERRUPTED
+        SpotifyContentValidator.validate(content, type);
+
+        return content;
     }
 }

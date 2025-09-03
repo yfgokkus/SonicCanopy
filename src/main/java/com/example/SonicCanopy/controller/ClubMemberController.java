@@ -1,20 +1,16 @@
 package com.example.SonicCanopy.controller;
 
-import com.example.SonicCanopy.dto.club.ClubDto;
-import com.example.SonicCanopy.dto.clubMember.ClubMemberDto;
-import com.example.SonicCanopy.dto.response.ApiResponse;
-import com.example.SonicCanopy.entities.ClubMember;
-import com.example.SonicCanopy.entities.User;
+import com.example.SonicCanopy.domain.dto.clubMember.ClubMemberDto;
+import com.example.SonicCanopy.domain.dto.global.ApiResponse;
+import com.example.SonicCanopy.domain.dto.global.PagedResponse;
+import com.example.SonicCanopy.domain.entity.User;
 import com.example.SonicCanopy.service.app.ClubMemberService;
-import org.springframework.data.domain.Page;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.Map;
-
 @RestController
 @RequestMapping("/clubs/{clubId}")
 public class ClubMemberController {
@@ -24,8 +20,8 @@ public class ClubMemberController {
         this.clubMemberService = clubMemberService;
     }
 
-    @PostMapping("/join")
-    public ResponseEntity<ApiResponse<String>> joinClub(
+    @PostMapping
+    public ResponseEntity<ApiResponse<Void>> joinClub(
             @PathVariable Long clubId,
             @AuthenticationPrincipal User user) {
 
@@ -33,8 +29,8 @@ public class ClubMemberController {
         return ResponseEntity.ok(ApiResponse.success("Join request submitted"));
     }
 
-    @DeleteMapping("/members/me/leave")
-    public ResponseEntity<ApiResponse<String>> leaveClub(
+    @DeleteMapping
+    public ResponseEntity<ApiResponse<Void>> leaveClub(
             @PathVariable Long clubId,
             @AuthenticationPrincipal User user) {
 
@@ -42,33 +38,26 @@ public class ClubMemberController {
         return ResponseEntity.ok(ApiResponse.success("Leave request submitted"));
     }
 
-    @PostMapping("/members/{userId}/kick")
-    public ResponseEntity<ApiResponse<String>> kickMember(@PathVariable Long clubId, @PathVariable Long userId, @AuthenticationPrincipal User user) {
+    @PostMapping("/members/{userId}")
+    public ResponseEntity<ApiResponse<Void>> kickMember(@PathVariable Long clubId, @PathVariable Long userId, @AuthenticationPrincipal User user) {
         clubMemberService.kickMember(clubId, userId, user);
         return ResponseEntity.ok(ApiResponse.success("User has been kicked from the club"));
     }
 
     @GetMapping("/join-requests")
-    public ResponseEntity<ApiResponse<Page<ClubMemberDto>>> getJoinRequests(
+    public ResponseEntity<ApiResponse<PagedResponse<ClubMemberDto>>> getJoinRequests(
             @PathVariable Long clubId,
             @AuthenticationPrincipal User user,
-            Pageable pageable) {
+            @PageableDefault(page = 0, size = 10) Pageable pageable,
+            HttpServletRequest request
+    ) {
+        PagedResponse<ClubMemberDto> page = clubMemberService.getAllJoinRequests(clubId, user, pageable, request);
 
-        Page<ClubMemberDto> page = clubMemberService.getAllJoinRequests(clubId, user, pageable);
-
-        Map<String, Object> metadata = new HashMap<>();
-        metadata.put("page", page.getNumber());
-        metadata.put("size", page.getSize());
-        metadata.put("totalElements", page.getTotalElements());
-        metadata.put("totalPages", page.getTotalPages());
-
-        return ResponseEntity.ok(
-                ApiResponse.success("Pending join requests retrieved successfully", page, metadata)
-        );
+        return ResponseEntity.ok(ApiResponse.success("Pending join requests retrieved successfully", page));
     }
 
-    @PostMapping("/join-requests/{userId}/accept")
-    public ResponseEntity<ApiResponse<String>> acceptJoinRequest(
+    @PostMapping("/join-requests/{userId}")
+    public ResponseEntity<ApiResponse<Void>> acceptJoinRequest(
             @PathVariable Long clubId,
             @PathVariable Long userId,
             @AuthenticationPrincipal User requester) {
@@ -77,14 +66,15 @@ public class ClubMemberController {
         return ResponseEntity.ok(ApiResponse.success("Join request accepted"));
     }
 
-    @DeleteMapping("/join-requests/{userId}/reject")
-    public ResponseEntity<ApiResponse<String>> rejectJoinRequest(
+    @DeleteMapping("/join-requests/{userId}")
+    public ResponseEntity<ApiResponse<Void>> rejectJoinRequest(
             @PathVariable Long clubId,
             @PathVariable Long userId,
             @AuthenticationPrincipal User requester) {
 
         clubMemberService.rejectJoinRequest(clubId, userId, requester);
         return ResponseEntity.ok(ApiResponse.success("Join request rejected"));
+
     }
 
 }

@@ -1,22 +1,26 @@
 package com.example.SonicCanopy.service.app;
 
-import com.example.SonicCanopy.dto.club.ClubDto;
-import com.example.SonicCanopy.dto.clubMember.ClubMemberDto;
-import com.example.SonicCanopy.entities.*;
-import com.example.SonicCanopy.exception.club.UnauthorizedActionException;
-import com.example.SonicCanopy.exception.clubMember.AlreadyMemberException;
-import com.example.SonicCanopy.exception.club.ClubNotFoundException;
-import com.example.SonicCanopy.exception.clubMember.ClubMemberDoesNotExistException;
-import com.example.SonicCanopy.exception.clubMember.RequestNotFoundException;
-import com.example.SonicCanopy.mapper.ClubMapper;
-import com.example.SonicCanopy.mapper.ClubMemberMapper;
+import com.example.SonicCanopy.domain.dto.club.ClubDto;
+import com.example.SonicCanopy.domain.dto.clubMember.ClubMemberDto;
+import com.example.SonicCanopy.domain.dto.global.PagedResponse;
+import com.example.SonicCanopy.domain.entity.*;
+import com.example.SonicCanopy.domain.exception.club.UnauthorizedActionException;
+import com.example.SonicCanopy.domain.exception.clubMember.AlreadyMemberException;
+import com.example.SonicCanopy.domain.exception.club.ClubNotFoundException;
+import com.example.SonicCanopy.domain.exception.clubMember.ClubMemberDoesNotExistException;
+import com.example.SonicCanopy.domain.exception.clubMember.RequestNotFoundException;
+import com.example.SonicCanopy.domain.mapper.ClubMapper;
+import com.example.SonicCanopy.domain.mapper.ClubMemberMapper;
+import com.example.SonicCanopy.domain.util.PaginationUtils;
 import com.example.SonicCanopy.repository.ClubMemberRepository;
 import com.example.SonicCanopy.repository.ClubRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class ClubMemberService {
@@ -34,20 +38,21 @@ public class ClubMemberService {
         this.clubMapper = clubMapper;
     }
 
-    public Page<ClubMemberDto> getAllMembersOrderedByRole(User user, Pageable pageable) {
-        //Pageable pageable = PageRequest.of(page, size, Sort.by("joinedAt").descending()); // creating pageable object
+    public PagedResponse<ClubMemberDto> getAllMembersOrderedByRole(User user, Pageable pageable, HttpServletRequest request) {
 
-        Page<ClubMember> clubMembers = clubMemberRepository.findAllByClubIdOrderedByRole(user.getId(), pageable);
+        Page<ClubMember> clubMemberPage = clubMemberRepository.findAllByClubIdOrderedByRole(user.getId(), pageable);
+        List<ClubMemberDto> clubMembers = clubMemberMapper.toDtoList(clubMemberPage.getContent());
 
-        return clubMembers.map(clubMemberMapper::toDto);
+        return PaginationUtils.buildPagedResponse(clubMembers, clubMemberPage, request);
     }
 
-    public Page<ClubDto> getUserClubs(User user, Pageable pageable) {
-        Page<Club> userClubsPage = clubMemberRepository.findClubsByUserId(user.getId(), pageable);
-        return userClubsPage.map(clubMapper::toDto);
+    public PagedResponse<ClubDto> getUserClubs(User user, Pageable pageable, HttpServletRequest request) {
+        Page<Club> userClubsPage = clubRepository.findByMembersUserId(user.getId(), pageable);
+        List<ClubDto> userClubs = clubMapper.toDtoList(userClubsPage.getContent());
+        return PaginationUtils.buildPagedResponse(userClubs, userClubsPage, request);
     }
 
-    public Page<ClubMemberDto> getAllJoinRequests(Long clubId, User requester, Pageable pageable) {
+    public PagedResponse<ClubMemberDto> getAllJoinRequests(Long clubId, User requester, Pageable pageable, HttpServletRequest request) {
         clubAuthorizationService.authorizeMemberManagement(clubId, requester);
 
         Page<ClubMember> pendingRequestsPage = clubMemberRepository.findByClubIdAndStatus(clubId, JoinStatus.PENDING, pageable);
@@ -56,7 +61,9 @@ public class ClubMemberService {
             throw new RequestNotFoundException("No join requests found");
         }
 
-        return pendingRequestsPage.map(clubMemberMapper::toDto);
+        List<ClubMemberDto> pendingRequests = clubMemberMapper.toDtoList(pendingRequestsPage.getContent());
+
+        return PaginationUtils.buildPagedResponse(pendingRequests, pendingRequestsPage, request);
     }
 
     public void joinClub(Long clubId, User user) {

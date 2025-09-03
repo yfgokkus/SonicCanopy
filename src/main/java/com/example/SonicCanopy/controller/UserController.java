@@ -1,26 +1,24 @@
 package com.example.SonicCanopy.controller;
 
-import com.example.SonicCanopy.dto.club.ClubDto;
-import com.example.SonicCanopy.dto.response.ApiResponse;
-import com.example.SonicCanopy.dto.user.CreateUserRequestDto;
-import com.example.SonicCanopy.dto.user.UserDto;
-import com.example.SonicCanopy.mapper.UserMapper;
-import com.example.SonicCanopy.entities.User;
+import com.example.SonicCanopy.domain.dto.club.ClubDto;
+import com.example.SonicCanopy.domain.dto.global.ApiResponse;
+import com.example.SonicCanopy.domain.dto.global.PagedResponse;
+import com.example.SonicCanopy.domain.dto.user.CreateUserRequestDto;
+import com.example.SonicCanopy.domain.dto.user.UserDto;
+import com.example.SonicCanopy.domain.mapper.UserMapper;
+import com.example.SonicCanopy.domain.entity.User;
 import com.example.SonicCanopy.service.app.ClubMemberService;
 import com.example.SonicCanopy.service.app.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Optional;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
 @RequestMapping("/users")
@@ -37,9 +35,9 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<UserDto>> createUser(@Valid @RequestBody CreateUserRequestDto request) {
+    public ResponseEntity<ApiResponse<UserDto>> register(@Valid @RequestBody CreateUserRequestDto request) {
         User user = userService.createUser(request);
-        UserDto response = mapper.toUserDto(user);
+        UserDto response = mapper.toDto(user);
 
         log.info("User '{}' successfully created", request.username());
         return ResponseEntity
@@ -50,16 +48,17 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserDto>> getCurrentUser(@AuthenticationPrincipal User user) {
         User userFromDb = userService.getByUsername(user.getUsername());
-        UserDto response = mapper.toUserDto(userFromDb);
+        UserDto response = mapper.toDto(userFromDb);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @GetMapping("/me/clubs")
-    public ResponseEntity<ApiResponse<Page<ClubDto>>> getUserClubs(
+    public ResponseEntity<ApiResponse<PagedResponse<ClubDto>>> getUserClubs(
             @AuthenticationPrincipal User user,
-            @PageableDefault(page = 0, size = 10) Pageable pageable) {
+            @PageableDefault(page = 0, size = 10) Pageable pageable,
+            HttpServletRequest request) {
 
-        Page<ClubDto> result = clubMemberService.getUserClubs(user, pageable);
+        PagedResponse<ClubDto> result = clubMemberService.getUserClubs(user, pageable, request);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
@@ -68,3 +67,4 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("Access granted"));
     }
 }
+
