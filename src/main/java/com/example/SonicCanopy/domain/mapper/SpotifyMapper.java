@@ -3,7 +3,6 @@ package com.example.SonicCanopy.domain.mapper;
 import com.example.SonicCanopy.domain.dto.spotify.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.StreamSupport;
@@ -81,12 +80,15 @@ public class SpotifyMapper {
                 .toList();
     }
 
+    // MAY REQUIRE extra safety for batch processing or future-proofing against unexpected malformed JSON //
     public TrackDto toTrackDto(JsonNode track) {
         List<String> artists = getArtists(track.path("artists"));
         List<Image> images = getImages(track.path("album").path("images"));
         return TrackDto.builder()
                 .name(track.path("name").asText("NaN"))
+                .type(track.path("type").asText("NaN"))
                 .uri(track.path("uri").asText(null))
+                .url(track.path("external_urls").path("spotify").asText(null))
                 .images(images)
                 .artists(artists)
                 .albumType(track.path("album").path("album_type").asText(null))
@@ -103,6 +105,7 @@ public class SpotifyMapper {
         return AlbumDto.builder()
                 .name(album.path("name").asText("NaN"))
                 .uri(album.path("uri").asText(null))
+                .url(album.path("external_urls").path("spotify").asText(null))
                 .images(images)
                 .artists(artists)
                 .tracks(toTrackDtoList(album))
@@ -117,6 +120,7 @@ public class SpotifyMapper {
         return ArtistDto.builder()
                 .name(artist.path("name").asText("unknown"))
                 .uri(artist.path("uri").asText(null))
+                .url(artist.path("external_urls").path("spotify").asText(null))
                 .images(images)
                 .followers(artist.path("followers").path("total").asInt())
                 .build();
@@ -127,6 +131,7 @@ public class SpotifyMapper {
         return PlaylistDto.builder()
                 .name(playlist.path("name").asText("NaN"))
                 .uri(playlist.path("uri").asText(null))
+                .url(playlist.path("external_urls").path("spotify").asText(null))
                 .images(images)
                 .ownerName(playlist.path("owner").path("display_name").asText("unknown"))
                 .ownerUrl(playlist.path("owner").path("external_urls").path("spotify").asText(null))

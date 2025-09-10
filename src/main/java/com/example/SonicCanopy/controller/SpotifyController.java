@@ -37,13 +37,4 @@ public class SpotifyController {
         return ApiResponse.success(result);
     }
 
-//    @GetMapping("/search")
-//    public ResponseEntity<JsonNode> searchContent(@RequestParam String q,
-//                                                     @RequestParam(required = false) String type) {
-//        String searchType = (type != null && !type.isBlank()) ? type : "playlist";
-//        JsonNode response = spotifyClient.search(q, searchType);
-//        return ResponseEntity.ok(response);
-//    }
-
-
 }

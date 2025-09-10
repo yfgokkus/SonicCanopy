@@ -15,6 +15,20 @@ import java.util.List;
 @Setter
 public class SpotifyContentDto {
     private String name;
+    private String type;
     private String uri;
-    List<Image> images;
+    private String url;
+    private List<Image> images;
+    private boolean failed;
+    private String message;
+
+
+    // --- CONSTRUCTOR FOR FAILED FETCHES --- //
+    public SpotifyContentDto(String type, String uri, String message) {
+        this.type = type;
+        this.uri = uri;
+        this.failed = true;
+        this.message = message;
+    }
 }
+

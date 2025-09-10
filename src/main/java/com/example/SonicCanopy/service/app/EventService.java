@@ -16,7 +16,6 @@ import com.example.SonicCanopy.domain.util.SpotifyContentValidator;
 import com.example.SonicCanopy.repository.ClubRepository;
 import com.example.SonicCanopy.repository.EventRepository;
 import com.example.SonicCanopy.service.infrastructure.spotify.SpotifyContentService;
-import com.example.SonicCanopy.domain.util.SpotifyUriValidator;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -132,7 +131,7 @@ public class EventService {
                 .filter(Objects::nonNull)
                 .toList();
 
-        Map<String, SpotifyContentDto> contentMap = getSpotifyContentFromURIs(uris);
+        Map<String, SpotifyContentDto> contentMap = fetchSpotifyContentMappedByUris(uris);
 
         List<EventDto> eventDtoList = eventPage.stream()
                 .map(event -> {
@@ -152,37 +151,25 @@ public class EventService {
         );
     }
 
-    private Map<String, SpotifyContentDto> getSpotifyContentFromURIs(List<String> uris) {
+    private Map<String, SpotifyContentDto> fetchSpotifyContentMappedByUris(List<String> uris) {
         if (uris == null || uris.isEmpty()) {
             return Collections.emptyMap();
         }
 
         return uris.parallelStream()
                 .map(uri -> {
-                    SpotifyContentDto content = safeFetchContent(uri);
-                    return content != null ? Map.entry(uri, content) : null;
+                    SpotifyContentDto content = fetchAndValidateSpotifyContent(uri);
+                    return Map.entry(uri, content);
                 })
-                .filter(Objects::nonNull)
                 .collect(Collectors.toConcurrentMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    private SpotifyContentDto safeFetchContent(String uri) {
-        try {
-            return fetchAndValidateSpotifyContent(uri); // hatalı veya invalid URI => null
-        } catch (Exception e) {
-            return null; // fail gracefully
-        }
-    }
-
     private SpotifyContentDto fetchAndValidateSpotifyContent(String uri) {
-        if (!SpotifyUriValidator.isValid(uri)) return null;
+        SpotifyContentDto content = spotifyContentService.getContent(uri);
 
-        String id = SpotifyUriValidator.extractId(uri);
-        String type = SpotifyUriValidator.extractType(uri);
-
-        SpotifyContentDto content = spotifyContentService.getContent(id, type);
-        //TODO: BATCH CALLS CAN BE INTERRUPTED
-        SpotifyContentValidator.validate(content, type);
+        if(!content.isFailed()){
+            return SpotifyContentValidator.validate(content, content.getName());
+        }
 
         return content;
     }

@@ -1,11 +1,16 @@
 package com.example.SonicCanopy.service.infrastructure.spotify;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+
+import java.util.Optional;
 
 @Service
+@Slf4j
 public class SpotifyClient {
 
     private final WebClient spotifyClient;
@@ -51,15 +56,17 @@ public class SpotifyClient {
         return requestBuilder("artists", id);
     }
 
-    private JsonNode requestBuilder(String type, String id){
+    private JsonNode requestBuilder(String type, String id) {
         String token = authService.getAccessToken();
 
         return spotifyClient.get()
-                .uri("/{type}/{id}",type, id)
+                .uri("/{type}/{id}", type, id)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .retrieve()
                 .bodyToMono(JsonNode.class)
                 .block();
     }
+
+
 
 }

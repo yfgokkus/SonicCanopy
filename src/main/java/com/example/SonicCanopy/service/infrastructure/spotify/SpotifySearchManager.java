@@ -1,7 +1,6 @@
 package com.example.SonicCanopy.service.infrastructure.spotify;
 
 import com.example.SonicCanopy.domain.dto.spotify.PagedSpotifyContent;
-import com.example.SonicCanopy.domain.dto.spotify.PlaylistDto;
 import com.example.SonicCanopy.domain.mapper.SpotifyMapper;
 import com.example.SonicCanopy.domain.dto.spotify.MultiTypeContentDto;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -9,7 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Service;
-import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -160,7 +158,7 @@ public class SpotifySearchManager {
     private JsonNode buildResponseJson(String query, int newOffset, int desiredLimit, long total, ArrayNode validItems){
 
         ObjectNode patchedContentNode = objectMapper.createObjectNode();
-        patchedContentNode.put("href", buildHref(query, "playlist", newOffset, desiredLimit));
+        patchedContentNode.put("href", buildHrefPlaylist(query, newOffset, desiredLimit));
         patchedContentNode.put("limit", desiredLimit);
         patchedContentNode.put("offset", newOffset);
         patchedContentNode.put("total", total);
@@ -185,9 +183,9 @@ public class SpotifySearchManager {
         return !item.isNull() && item.hasNonNull("id") && item.hasNonNull("name");
     }
 
-    private String buildHref(String query, String type, int offset, int limit) {
+    private String buildHrefPlaylist(String query, int offset, int limit) {
         return String.format("https://api.spotify.com/v1/search?q=%s&type=%s&limit=%d&offset=%d",
-                URLEncoder.encode(query, StandardCharsets.UTF_8), type, limit, offset);
+                URLEncoder.encode(query, StandardCharsets.UTF_8), "playlist", limit, offset);
     }
 }
 

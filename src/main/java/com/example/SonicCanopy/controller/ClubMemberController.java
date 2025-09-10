@@ -74,7 +74,6 @@ public class ClubMemberController {
 
         clubMemberService.rejectJoinRequest(clubId, userId, requester);
         return ResponseEntity.ok(ApiResponse.success("Join request rejected"));
-
     }
 
 }
