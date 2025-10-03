@@ -1,26 +1,40 @@
 package com.example.SonicCanopy.domain.entity;
 
+
+import lombok.Getter;
+
 import java.util.EnumSet;
 import java.util.Set;
 
+@Getter
 public enum ClubRole {
-    OWNER,
-    ADMIN,
-    NERD,
-    MEMBER;
+    OWNER(EnumSet.of(
+            Privilege.MANAGE_EVENTS,
+            Privilege.MANAGE_MEMBERS,
+            Privilege.EDIT_CLUB_SETTINGS,
+            Privilege.DELETE_CLUB,
+            Privilege.COMMENT_ON_EVENTS,
+            Privilege.DELETE_COMMENTS
+    )),
+    ADMIN(EnumSet.of(
+            Privilege.MANAGE_EVENTS,
+            Privilege.MANAGE_MEMBERS,
+            Privilege.EDIT_CLUB_SETTINGS,
+            Privilege.COMMENT_ON_EVENTS,
+            Privilege.DELETE_COMMENTS
+    )),
+    NERD(EnumSet.of(
+            Privilege.MANAGE_EVENTS,
+            Privilege.COMMENT_ON_EVENTS
+    )),
+    MEMBER(EnumSet.of(
+            Privilege.COMMENT_ON_EVENTS
+    ));
 
-    // Roles allowed to manage events
-    private static final Set<ClubRole> MEMBER_MANAGEMENT_PRIVILEGED_ROLES =
-            EnumSet.of(ADMIN, OWNER);
+    private final Set<Privilege> privileges;
+    ClubRole(Set<Privilege> privileges) { this.privileges = privileges; }
 
-    private static final Set<ClubRole> EVENT_MANAGEMENT_PRIVILEGED_ROLES =
-            EnumSet.of(ADMIN, OWNER, NERD);
+    public boolean allowedTo(Privilege privilege) { return privileges.contains(privilege);
 
-    public boolean canManageMembers(){
-        return MEMBER_MANAGEMENT_PRIVILEGED_ROLES.contains(this);
-    }
-
-    public boolean canManageEvents() {
-        return EVENT_MANAGEMENT_PRIVILEGED_ROLES.contains(this);
     }
 }

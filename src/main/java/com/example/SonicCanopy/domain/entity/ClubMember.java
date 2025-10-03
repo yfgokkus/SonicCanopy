@@ -1,10 +1,7 @@
 package com.example.SonicCanopy.domain.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -14,9 +11,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor 
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class ClubMember {
 
     @EmbeddedId
+    @EqualsAndHashCode.Include
     private ClubMemberId id;
 
     @ManyToOne(fetch = FetchType.LAZY)

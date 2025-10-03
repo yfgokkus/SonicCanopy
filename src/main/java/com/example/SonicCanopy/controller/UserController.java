@@ -3,7 +3,7 @@ package com.example.SonicCanopy.controller;
 import com.example.SonicCanopy.domain.dto.club.ClubDto;
 import com.example.SonicCanopy.domain.dto.global.ApiResponse;
 import com.example.SonicCanopy.domain.dto.global.PagedResponse;
-import com.example.SonicCanopy.domain.dto.user.CreateUserRequestDto;
+import com.example.SonicCanopy.domain.dto.user.CreateUserRequest;
 import com.example.SonicCanopy.domain.dto.user.UserDto;
 import com.example.SonicCanopy.domain.mapper.UserMapper;
 import com.example.SonicCanopy.domain.entity.User;
@@ -18,7 +18,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
 @RequestMapping("/users")
@@ -35,7 +34,7 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<UserDto>> register(@Valid @RequestBody CreateUserRequestDto request) {
+    public ResponseEntity<ApiResponse<UserDto>> register(@Valid @RequestBody CreateUserRequest request) {
         User user = userService.createUser(request);
         UserDto response = mapper.toDto(user);
 
@@ -45,8 +44,15 @@ public class UserController {
                 .body(ApiResponse.success("User successfully created", response));
     }
 
+    @GetMapping("/{username}")
+    public ResponseEntity<ApiResponse<UserDto>> getUser(@PathVariable String username) {
+        User user = userService.getByUsername(username);
+        UserDto response = mapper.toDto(user);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<UserDto>> getCurrentUser(@AuthenticationPrincipal User user) {
+    public ResponseEntity<ApiResponse<UserDto>> getMe(@AuthenticationPrincipal User user) {
         User userFromDb = userService.getByUsername(user.getUsername());
         UserDto response = mapper.toDto(userFromDb);
         return ResponseEntity.ok(ApiResponse.success(response));

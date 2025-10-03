@@ -18,6 +18,5 @@ public class PagedSpotifyContent <T> {
         this.offset = offset;
         this.limit = limit;
         this.total = total;
-        //TODO: next and previous
     }
 }

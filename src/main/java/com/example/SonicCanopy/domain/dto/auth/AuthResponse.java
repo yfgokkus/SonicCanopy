@@ -1,11 +1,11 @@
 package com.example.SonicCanopy.domain.dto.auth;
 
-public record AuthResponseDto(
+public record AuthResponse(
         String accessToken,
         String refreshToken,
         String tokenType
 ) {
-    public AuthResponseDto(String accessToken, String refreshToken) {
+    public AuthResponse(String accessToken, String refreshToken) {
         this(accessToken, refreshToken, "Bearer");
     }
 }

@@ -2,7 +2,7 @@ package com.example.SonicCanopy.service.infrastructure.spotify;
 
 import com.example.SonicCanopy.domain.dto.spotify.PagedSpotifyContent;
 import com.example.SonicCanopy.domain.mapper.SpotifyMapper;
-import com.example.SonicCanopy.domain.dto.spotify.MultiTypeContentDto;
+import com.example.SonicCanopy.domain.dto.spotify.ShallowSearchDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -63,7 +63,7 @@ public class SpotifySearchManager {
     }
 
 
-    public MultiTypeContentDto shallowSearch(String q, Set<String> typesParam) {
+    public ShallowSearchDto shallowSearch(String q, Set<String> typesParam) {
         // Default to all content types if empty
         Set<String> types = typesParam.isEmpty() ? new HashSet<>(CONTENT_TYPES) : typesParam;
         JsonNode playlistNode = null;
@@ -104,7 +104,7 @@ public class SpotifySearchManager {
             }
         }
 
-        return new MultiTypeContentDto(
+        return new ShallowSearchDto(
                 spotifyMapper.toTrackDtoList(others),
                 spotifyMapper.toAlbumDtoList(others),
                 spotifyMapper.toArtistDtoList(others),

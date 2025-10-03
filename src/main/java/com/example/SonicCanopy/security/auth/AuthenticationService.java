@@ -1,8 +1,8 @@
 package com.example.SonicCanopy.security.auth;
 
-import com.example.SonicCanopy.domain.dto.auth.AuthRequestDto;
-import com.example.SonicCanopy.domain.dto.auth.AuthResponseDto;
-import com.example.SonicCanopy.domain.dto.auth.RefreshTokenRequestDto;
+import com.example.SonicCanopy.domain.dto.auth.AuthRequest;
+import com.example.SonicCanopy.domain.dto.auth.AuthResponse;
+import com.example.SonicCanopy.domain.dto.auth.RefreshTokenRequest;
 import com.example.SonicCanopy.domain.exception.auth.InvalidCredentialsException;
 import com.example.SonicCanopy.domain.exception.auth.InvalidRefreshTokenException;
 import com.example.SonicCanopy.domain.exception.auth.RefreshTokenExpiredException;
@@ -31,13 +31,13 @@ public class AuthenticationService {
         this.userService = userService;
     }
 
-    public AuthResponseDto login(AuthRequestDto request) {
+    public AuthResponse login(AuthRequest request) {
         Authentication authentication = authenticate(request);
         UserDetails user = (UserDetails) authentication.getPrincipal();
         return generateTokens(user);
     }
 
-    public AuthResponseDto refreshToken(RefreshTokenRequestDto request) {
+    public AuthResponse refreshToken(RefreshTokenRequest request) {
         String refreshToken = request.refreshToken();
 
         try {
@@ -49,7 +49,7 @@ public class AuthenticationService {
             }
 
             String newAccessToken = jwtService.generateAccessToken(user);
-            return new AuthResponseDto(newAccessToken, refreshToken);
+            return new AuthResponse(newAccessToken, refreshToken);
 
         } catch (ExpiredJwtException e) {
             throw new RefreshTokenExpiredException("Refresh token has expired");
@@ -58,7 +58,7 @@ public class AuthenticationService {
         }
     }
 
-    private Authentication authenticate(AuthRequestDto request) {
+    private Authentication authenticate(AuthRequest request) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.username(), request.password())
@@ -71,10 +71,10 @@ public class AuthenticationService {
         }
     }
 
-    private AuthResponseDto generateTokens(UserDetails user) {
+    private AuthResponse generateTokens(UserDetails user) {
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
         log.debug("Generated access and refresh tokens for user '{}'", user.getUsername());
-        return new AuthResponseDto(accessToken, refreshToken);
+        return new AuthResponse(accessToken, refreshToken);
     }
 }

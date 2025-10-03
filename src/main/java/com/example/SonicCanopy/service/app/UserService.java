@@ -1,16 +1,17 @@
 package com.example.SonicCanopy.service.app;
 
-import com.example.SonicCanopy.domain.dto.user.CreateUserRequestDto;
-import com.example.SonicCanopy.domain.exception.user.UserCreationException;
+import com.example.SonicCanopy.domain.dto.user.CreateUserRequest;
+import com.example.SonicCanopy.domain.entity.Role;
 import com.example.SonicCanopy.domain.exception.user.UsernameAlreadyExistsException;
 import com.example.SonicCanopy.domain.entity.User;
 import com.example.SonicCanopy.repository.UserRepository;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Set;
 
 @Service
 public class UserService implements UserDetailsService {
@@ -24,17 +25,17 @@ public class UserService implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String username){
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
 
-    public User getByUsername(String username) throws UsernameNotFoundException {
+    public User getByUsername(String username){
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
-    public User createUser(CreateUserRequestDto request) {
+    public User createUser(CreateUserRequest request) {
         if (userRepository.existsByUsername(request.username())) {
             throw new UsernameAlreadyExistsException(request.username());
         }
@@ -43,18 +44,14 @@ public class UserService implements UserDetailsService {
                 .fullName(request.fullName())
                 .username(request.username())
                 .password(passwordEncoder.encode(request.password()))
-                .authorities(request.authorities())
+                .authorities(Set.of(Role.ROLE_USER))
                 .accountNonExpired(true)
                 .accountNonLocked(true)
                 .credentialsNonExpired(true)
                 .enabled(true)
                 .build();
 
-        try {
             return userRepository.save(newUser);
-        } catch (DataIntegrityViolationException e) {
-            throw new UserCreationException("Failed to save user to database", e);
-        }
     }
 }
 

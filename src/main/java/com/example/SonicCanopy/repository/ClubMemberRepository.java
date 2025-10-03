@@ -12,6 +12,9 @@ import java.util.Optional;
 public interface ClubMemberRepository extends JpaRepository<ClubMember, ClubMemberId> {
 
     boolean existsByUserAndClub(User user, Club club);
+    
+    @Query("select cm.clubRole from ClubMember cm where cm.club.id = :clubId and cm.user.id = :userId")
+    Optional<ClubRole> findClubRoleByClubIdAndUserId(Long clubId, Long userId);
 
     Optional<ClubMember> findByClubIdAndUserId(Long clubId, Long userId);
 

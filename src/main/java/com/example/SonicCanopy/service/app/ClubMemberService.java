@@ -19,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -30,17 +31,29 @@ public class ClubMemberService {
     private final ClubAuthorizationService clubAuthorizationService;
     private final ClubMapper clubMapper;
 
-    public ClubMemberService(ClubMemberRepository clubMemberRepository, ClubRepository clubRepository, ClubMemberMapper clubMemberMapper, ClubAuthorizationService clubAuthorizationService, ClubMapper clubMapper) {
+    private final Clock clock;
+
+    public ClubMemberService(ClubMemberRepository clubMemberRepository,
+                             ClubRepository clubRepository,
+                             ClubMemberMapper clubMemberMapper,
+                             ClubAuthorizationService clubAuthorizationService,
+                             ClubMapper clubMapper,
+                             Clock clock) {
         this.clubMemberRepository = clubMemberRepository;
         this.clubRepository = clubRepository;
         this.clubMemberMapper = clubMemberMapper;
         this.clubAuthorizationService = clubAuthorizationService;
         this.clubMapper = clubMapper;
+        this.clock = clock;
     }
 
-    public PagedResponse<ClubMemberDto> getAllMembersOrderedByRole(User user, Pageable pageable, HttpServletRequest request) {
+    public PagedResponse<ClubMemberDto> getAllMembersOrderedByRole(User user,
+                                                                   Pageable pageable,
+                                                                   HttpServletRequest request) {
 
-        Page<ClubMember> clubMemberPage = clubMemberRepository.findAllByClubIdOrderedByRole(user.getId(), pageable);
+        Page<ClubMember> clubMemberPage = clubMemberRepository
+                .findAllByClubIdOrderedByRole(user.getId(), pageable);
+
         List<ClubMemberDto> clubMembers = clubMemberMapper.toDtoList(clubMemberPage.getContent());
 
         return PaginationUtils.buildPagedResponse(clubMembers, clubMemberPage, request);
@@ -52,10 +65,14 @@ public class ClubMemberService {
         return PaginationUtils.buildPagedResponse(userClubs, userClubsPage, request);
     }
 
-    public PagedResponse<ClubMemberDto> getAllJoinRequests(Long clubId, User requester, Pageable pageable, HttpServletRequest request) {
+    public PagedResponse<ClubMemberDto> getAllJoinRequests(Long clubId,
+                                                           User requester,
+                                                           Pageable pageable,
+                                                           HttpServletRequest request) {
         clubAuthorizationService.authorizeMemberManagement(clubId, requester);
 
-        Page<ClubMember> pendingRequestsPage = clubMemberRepository.findByClubIdAndStatus(clubId, JoinStatus.PENDING, pageable);
+        Page<ClubMember> pendingRequestsPage = clubMemberRepository
+                .findByClubIdAndStatus(clubId, JoinStatus.PENDING, pageable);
 
         if (pendingRequestsPage.isEmpty()) {
             throw new RequestNotFoundException("No join requests found");
@@ -80,7 +97,7 @@ public class ClubMemberService {
                 .club(club)
                 .clubRole(ClubRole.MEMBER)
                 .status(club.isPrivate() ? JoinStatus.PENDING : JoinStatus.APPROVED)
-                .joinedAt(LocalDateTime.now())
+                .joinedAt(LocalDateTime.now(clock))
                 .build();
 
         clubMemberRepository.save(clubMember);
@@ -88,7 +105,9 @@ public class ClubMemberService {
 
     public void leaveClub(Long clubId, User user) {
         ClubMember member = clubMemberRepository.findByClubIdAndUserId(clubId, user.getId())
-                        .orElseThrow(() -> new ClubMemberDoesNotExistException("You are not a member of this club"));
+                        .orElseThrow(
+                                () -> new ClubMemberDoesNotExistException("You are not a member of this club")
+                        );
 
         clubMemberRepository.delete(member);
     }

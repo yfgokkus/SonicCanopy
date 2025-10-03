@@ -6,8 +6,9 @@ import lombok.Builder;
 import org.springframework.web.multipart.MultipartFile;
 
 @Builder
-public record CreateClubRequestDto(
+public record CreateClubRequest(
         @NotBlank String name,
         @Size(max = 255) String description,
-        MultipartFile profilePicture
+        Boolean imageProvided,
+        MultipartFile image
 ) {}

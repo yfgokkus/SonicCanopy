@@ -10,7 +10,7 @@ import java.util.List;
 public class ClubMemberMapper {
     public ClubMemberDto toDto(ClubMember member) {
         return new ClubMemberDto(
-                member.getUser().getId(),
+                member.getId().getUserId(),
                 member.getUser().getUsername(),
                 member.getClub().getId(),
                 member.getClub().getName(),

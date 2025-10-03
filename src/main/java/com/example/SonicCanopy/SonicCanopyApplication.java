@@ -10,4 +10,6 @@ public class SonicCanopyApplication {
 		SpringApplication.run(SonicCanopyApplication.class, args);
 	}
 
+	//TODO: FIREBASE STORAGE USER PROFILE PHOTO
+	//TODO: COMMENT SYSTEM
 }

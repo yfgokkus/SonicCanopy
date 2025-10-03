@@ -1,7 +1,7 @@
 package com.example.SonicCanopy.controller;
 
 import com.example.SonicCanopy.domain.dto.club.ClubDto;
-import com.example.SonicCanopy.domain.dto.club.CreateClubRequestDto;
+import com.example.SonicCanopy.domain.dto.club.CreateClubRequest;
 import com.example.SonicCanopy.domain.dto.global.ApiResponse;
 import com.example.SonicCanopy.domain.dto.global.PagedResponse;
 import com.example.SonicCanopy.domain.entity.User;
@@ -29,7 +29,7 @@ public class ClubController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<ClubDto>> createClub(
-            @RequestBody @Valid CreateClubRequestDto dto,
+            @RequestBody @Valid CreateClubRequest dto,
             @AuthenticationPrincipal User user) {
 
         ClubDto created = clubService.createClub(dto, user);
@@ -52,7 +52,7 @@ public class ClubController {
             @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal User user
     ) {
-        String imageUrl = clubService.updateClubImage(clubId, file, user);
+        String imageUrl = clubService.uploadClubImage(clubId, file, user);
         return ResponseEntity.ok(ApiResponse.success("Profile picture updated", imageUrl));
 
     }
@@ -78,6 +78,12 @@ public class ClubController {
         return ResponseEntity.ok(ApiResponse.success("Search results", response));
     }
 
-
-
+    @DeleteMapping("/{clubId}")
+    public ResponseEntity<ApiResponse<Void>> toggleClubPrivacy(
+            @PathVariable Long clubId,
+            @AuthenticationPrincipal User user
+    ) {
+        clubService.togglePrivacy(clubId, user);
+        return ResponseEntity.ok(ApiResponse.success());
+    }
 }

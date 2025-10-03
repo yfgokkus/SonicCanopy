@@ -1,88 +1,123 @@
 package com.example.SonicCanopy.service.infrastructure.firebase.concretes;
 
-import com.example.SonicCanopy.domain.exception.club.ImageDeletionException;
-import com.example.SonicCanopy.domain.exception.club.ImageUploadException;
+import com.example.SonicCanopy.domain.exception.firebase.*;
 import com.example.SonicCanopy.service.infrastructure.firebase.abstracts.StorageService;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.StorageException;
-import com.google.firebase.cloud.StorageClient;
+
+import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.unit.DataSize;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
 
 @Service
+@Slf4j
 public class FirebaseStorageService implements StorageService {
 
-    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+	//TODO: move this to app.props
     private static final List<String> ALLOWED_CONTENT_TYPES = List.of(
             "image/jpeg", "image/png", "image/webp"
     );
 
-    @Override
+    private final Bucket storageBucket;
+    private final String bucketUrlPrefix;
+    
+    @Value("${firebase.club.image.max-size}")
+    private DataSize MAX_FILE_SIZE;
+
+    public FirebaseStorageService(Bucket storageBucket) {
+        this.storageBucket = storageBucket;
+        this.bucketUrlPrefix = "https://storage.googleapis.com/" + storageBucket.getName() + "/";
+    }
+
     public String uploadClubImage(Long clubId, MultipartFile file) {
+        //Client should validate
+        if (file == null || file.isEmpty()) {
+        	throw new InvalidFileException("File not found. Invalid file.");
+        }
+
+        if (file.getSize() > MAX_FILE_SIZE.toBytes()) {
+            throw new ImageSizeLimitExceededException(
+                "File size exceeds {}MB limit.", MAX_FILE_SIZE.toMegabytes()
+            );
+        }
+
+        String detectedType = getFileTypeValidated(file);
+
         try {
-            if (file.isEmpty()) {
-                throw new IllegalArgumentException("File is empty");
-            }
-
-            if (file.getSize() > MAX_FILE_SIZE) {
-                throw new IllegalArgumentException("File size exceeds 5MB limit");
-            }
-
-            Tika tika = new Tika();
-            String detectedType = tika.detect(file.getInputStream());
-
-            if (!ALLOWED_CONTENT_TYPES.contains(detectedType.toLowerCase())) {
-                throw new IllegalArgumentException("Unsupported file type: " + detectedType);
-            }
-
-            //Filename Sanitization (Potential Risk)
             String uuid = UUID.randomUUID().toString();
             String safeFileName = uuid + getFileExtension(detectedType);
             String objectName = "club_images/" + clubId + "/" + safeFileName;
 
-            Bucket bucket = StorageClient.getInstance().bucket();
-            Blob blob = bucket.create(objectName, file.getBytes(), detectedType); // add image to the bucket
+            storageBucket.create(objectName, file.getBytes(), detectedType);
 
-            return "https://storage.googleapis.com/" + bucket.getName() + "/" + objectName;
+            return bucketUrlPrefix + objectName;
 
         } catch (IOException e) {
-            throw new ImageUploadException("Failed to upload image to Firebase Storage", e);
+            log.error("Failed to upload image to Firebase Storage. {}", e.getMessage());
+            throw new ImageUploadException("Image upload failed. Try again later");
         }
     }
 
     @Override
     public void deleteClubImage(String imageUrl) {
-        if (imageUrl == null || imageUrl.isBlank()) return;
+        if (imageUrl == null || imageUrl.isBlank()) {
+            throw new InvalidImageUrlException("Invalid image url");
+        }
+
+        if (!imageUrl.startsWith(bucketUrlPrefix)) {
+            log.error("Attempted to delete an image with an invalid URL prefix: {}", imageUrl);
+            throw new InvalidImageUrlException("Invalid image url");
+        }
+
+        String objectPath = imageUrl.substring(bucketUrlPrefix.length());
 
         try {
-            String bucketName = StorageClient.getInstance().bucket().getName();
-            String prefix = "https://storage.googleapis.com/" + bucketName + "/";
-            if (!imageUrl.startsWith(prefix)) {
-                throw new IllegalArgumentException("Invalid image URL format");
+        	Blob blob = storageBucket.get(objectPath);
+            
+            if(blob == null || !blob.exists()) {
+            	log.warn("Blob doesn't exist. Attempted to delete a non-existent image: {}", objectPath);
+            	throw new ImageDeletionException("Failed to delete image. Image url can be invalid.");
             }
-
-            String objectPath = imageUrl.substring(prefix.length());
-            Blob blob = StorageClient.getInstance().bucket().get(objectPath);
-
-            if (blob != null && blob.exists()) {
-                boolean success = blob.delete();
-                if (!success) {
-                    throw new ImageDeletionException("Failed to delete image: blob.delete() returned false");
-                }
+            
+            if (!blob.delete()) {
+                log.error("Failed to delete image. The storage service returned false.");
+                throw new ImageDeletionException("Storage service failed to delete the image");
             }
+            
+            log.info("Successfully deleted image: {}", objectPath);
         } catch (StorageException e) {
-            throw new ImageDeletionException("Failed to delete image from Firebase Storage", e);
+        	log.error("Failed to delete image. Storage service error: {}",e.getMessage());
+            throw new ImageDeletionException("Failed to delete image");
         }
     }
 
+    private String getFileTypeValidated(MultipartFile file) {
+        String detectedType;
+        try (InputStream inputStream = file.getInputStream()) {
+            Tika tika = new Tika();
+            detectedType = tika.detect(inputStream);
+        } catch (IOException e) {
+            log.error("Error while reading file type with Tika: {}", e.getMessage());
+            throw new ImageUploadException("Image upload failed", e);
+        }
+        //Client should validate
+        if (!ALLOWED_CONTENT_TYPES.contains(detectedType.toLowerCase())) {
+            log.error("Image type {} is not supported.", detectedType);
+            throw new UnsupportedFileTypeException("Unsupported file type: " + detectedType);
+        }
+        return detectedType;
+    }
+
     private String getFileExtension(String type) {
-        // Mapping MIME type to proper file extension
         return switch (type) {
             case "image/jpeg" -> ".jpg";
             case "image/png"  -> ".png";

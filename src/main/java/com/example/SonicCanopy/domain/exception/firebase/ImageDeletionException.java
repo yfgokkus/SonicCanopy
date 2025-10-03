@@ -1,4 +1,4 @@
-package com.example.SonicCanopy.domain.exception.club;
+package com.example.SonicCanopy.domain.exception.firebase;
 
 public class ImageDeletionException extends RuntimeException {
     public ImageDeletionException(String message) {

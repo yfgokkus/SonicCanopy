@@ -41,7 +41,7 @@ public class EventController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<PagedResponse<EventDto>>> listEvents(
+    public ResponseEntity<ApiResponse<PagedResponse<EventDto>>> getClubEvents(
             @PathVariable Long clubId,
             Pageable pageable,
             @AuthenticationPrincipal User user,

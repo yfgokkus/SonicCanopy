@@ -1,8 +1,8 @@
 package com.example.SonicCanopy.controller;
 
-import com.example.SonicCanopy.domain.dto.auth.AuthRequestDto;
-import com.example.SonicCanopy.domain.dto.auth.AuthResponseDto;
-import com.example.SonicCanopy.domain.dto.auth.RefreshTokenRequestDto;
+import com.example.SonicCanopy.domain.dto.auth.AuthRequest;
+import com.example.SonicCanopy.domain.dto.auth.AuthResponse;
+import com.example.SonicCanopy.domain.dto.auth.RefreshTokenRequest;
 import com.example.SonicCanopy.domain.dto.global.ApiResponse;
 import com.example.SonicCanopy.security.auth.AuthenticationService;
 import jakarta.validation.Valid;
@@ -24,14 +24,14 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthResponseDto>> login(@Valid @RequestBody AuthRequestDto request) {
-        AuthResponseDto response = authenticationService.login(request);
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody AuthRequest request) {
+        AuthResponse response = authenticationService.login(request);
         return ResponseEntity.ok(ApiResponse.success("Login successful", response));
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<AuthResponseDto>> refresh(@Valid @RequestBody RefreshTokenRequestDto request) {
-        AuthResponseDto response = authenticationService.refreshToken(request);
+    public ResponseEntity<ApiResponse<AuthResponse>> refresh(@Valid @RequestBody RefreshTokenRequest request) {
+        AuthResponse response = authenticationService.refreshToken(request);
         return ResponseEntity.ok(ApiResponse.success("Token refreshed", response));
     }
 }

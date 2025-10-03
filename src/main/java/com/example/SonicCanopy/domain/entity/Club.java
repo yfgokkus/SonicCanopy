@@ -19,16 +19,12 @@ public class Club {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String name;
 
     private String description;
 
     private LocalDateTime createdAt;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by")
-    private User createdBy;
 
     @Column(nullable = false)
     private boolean isPrivate = false;
@@ -36,7 +32,7 @@ public class Club {
     @OneToMany(mappedBy = "club", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ClubMember> members;
 
-    private String pictureUrl;
+    private String imageUrl;
 
     @PrePersist
     public void prePersist() {

@@ -1,7 +1,7 @@
 package com.example.SonicCanopy.controller;
 
 import com.example.SonicCanopy.domain.dto.global.ApiResponse;
-import com.example.SonicCanopy.domain.dto.spotify.MultiTypeContentDto;
+import com.example.SonicCanopy.domain.dto.spotify.ShallowSearchDto;
 import com.example.SonicCanopy.domain.dto.spotify.PagedSpotifyContent;
 import com.example.SonicCanopy.service.infrastructure.spotify.SpotifySearchManager;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,9 +31,9 @@ public class SpotifyController {
     }
 
     @GetMapping("/preview")
-    public ApiResponse<MultiTypeContentDto> getSearchPreview(@RequestParam String q,
-                                                                             @RequestParam(required = false) Set<String> typeSet) {
-        MultiTypeContentDto result = spotifySearchManager.shallowSearch(q, typeSet);
+    public ApiResponse<ShallowSearchDto> getSearchPreview(@RequestParam String q,
+                                                          @RequestParam(required = false) Set<String> typeSet) {
+        ShallowSearchDto result = spotifySearchManager.shallowSearch(q, typeSet);
         return ApiResponse.success(result);
     }
 

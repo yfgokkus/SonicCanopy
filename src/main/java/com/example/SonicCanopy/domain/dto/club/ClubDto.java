@@ -1,12 +1,14 @@
 package com.example.SonicCanopy.domain.dto.club;
 
+import lombok.Builder;
+
 import java.time.LocalDateTime;
 
+@Builder
 public record ClubDto(
         Long id,
         String name,
         String description,
-        String profilePictureUrl,
-        LocalDateTime createdAt,
-        String createdByUsername
+        String imageUrl,
+        LocalDateTime createdAt
 ) {}

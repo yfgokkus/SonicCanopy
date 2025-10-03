@@ -7,6 +7,7 @@ import com.example.SonicCanopy.domain.dto.global.PagedResponse;
 import com.example.SonicCanopy.domain.dto.spotify.SpotifyContentDto;
 import com.example.SonicCanopy.domain.entity.Club;
 import com.example.SonicCanopy.domain.entity.Event;
+import com.example.SonicCanopy.domain.entity.Privilege;
 import com.example.SonicCanopy.domain.entity.User;
 import com.example.SonicCanopy.domain.exception.club.ClubNotFoundException;
 import com.example.SonicCanopy.domain.exception.club.UnauthorizedActionException;
@@ -47,8 +48,8 @@ public class EventService {
         this.spotifyContentService = spotifyContentService;
     }
 
-    public EventDto createEvent(Long clubId, CreateEventRequestDto request, User requester) {
-        clubAuthorizationService.authorizeEventManagement(clubId, requester);
+    public EventDto createEvent(Long clubId, CreateEventRequestDto request, User user) {
+        clubAuthorizationService.authorize(clubId, user.getId(), Privilege.MANAGE_EVENTS);
 
         Club club = clubRepository.findById(clubId)
                 .orElseThrow(() -> new ClubNotFoundException("event cannot be created"));
@@ -58,7 +59,7 @@ public class EventService {
                 .description(request.description())
                 .eventDurationMs(request.eventDurationMs())
                 .club(club)
-                .createdBy(requester)
+                .createdBy(user)
                 .spotifyContentUri(request.spotifyContentUri())
                 .build();
 
@@ -70,7 +71,7 @@ public class EventService {
     }
 
     public void deleteEvent(long clubId, long eventId, User user) {
-        clubAuthorizationService.authorizeEventManagement(clubId, user);
+        clubAuthorizationService.authorize(clubId, user.getId(), Privilege.MANAGE_EVENTS);
 
         Event event = eventRepository.findByIdAndClubId(eventId, clubId)
                 .orElseThrow(() -> new IllegalArgumentException(
@@ -81,7 +82,7 @@ public class EventService {
     }
 
     public EventDto updateEvent(Long clubId, Long eventId, UpdateEventRequestDto request, User user) {
-        clubAuthorizationService.authorizeEventManagement(clubId, user);
+        clubAuthorizationService.authorize(clubId, user.getId(),  Privilege.MANAGE_EVENTS);
 
         Event event = eventRepository.findByIdAndClubId(eventId, clubId)
                 .orElseThrow(() -> new EventNotFoundException(
@@ -103,10 +104,10 @@ public class EventService {
     }
 
     public EventDto getEventByIdAndClubId(Long clubId, Long eventId, User user){
-        boolean isPrivate = eventRepository.isPrivate(clubId);
+        boolean isPrivate = clubRepository.isPrivate(clubId);
 
         if(isPrivate && !clubAuthorizationService.isMember(clubId, user.getId())){
-            throw new UnauthorizedActionException("Given user is not a member of this club");
+            throw new UnauthorizedActionException("Club is private");
         }
 
         Event event = eventRepository.findByIdAndClubId(eventId, clubId).orElseThrow(
@@ -119,10 +120,10 @@ public class EventService {
     }
 
     public PagedResponse<EventDto> getClubEvents(Long clubId, User user, Pageable pageable, HttpServletRequest request) {
-        boolean isPrivate = eventRepository.isPrivate(clubId);
+        boolean isPrivate = clubRepository.isPrivate(clubId);
 
         if(isPrivate && !clubAuthorizationService.isMember(clubId, user.getId())){
-            throw new UnauthorizedActionException("Given user is not a member of this club");
+            throw new UnauthorizedActionException("Club is private");
         }
 
         Page<Event> eventPage = eventRepository.findAllByClubIdOrderByCreatedAtDesc(clubId, pageable);
