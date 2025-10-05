@@ -69,7 +69,7 @@ public class ClubMemberService {
                                                            User requester,
                                                            Pageable pageable,
                                                            HttpServletRequest request) {
-        clubAuthorizationService.authorizeMemberManagement(clubId, requester);
+        clubAuthorizationService.authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
 
         Page<ClubMember> pendingRequestsPage = clubMemberRepository
                 .findByClubIdAndStatus(clubId, JoinStatus.PENDING, pageable);
@@ -114,7 +114,7 @@ public class ClubMemberService {
 
     public void acceptJoinRequest(Long clubId, Long userId, User requester) {
 
-        clubAuthorizationService.authorizeMemberManagement(clubId, requester);
+        clubAuthorizationService.authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
 
         ClubMember membership = getJoinRequestOrThrow(clubId, userId);
 
@@ -123,14 +123,14 @@ public class ClubMemberService {
     }
 
     public void rejectJoinRequest(Long clubId, Long userId, User requester) {
-        clubAuthorizationService.authorizeMemberManagement(clubId, requester);
+        clubAuthorizationService.authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
         ClubMember membership = getJoinRequestOrThrow(clubId, userId);
 
         clubMemberRepository.delete(membership);
     }
 
     public void kickMember(Long clubId, Long userIdToKick, User requester) {
-        clubAuthorizationService.authorizeMemberManagement(clubId, requester);
+        clubAuthorizationService.authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
 
         if (requester.getId().equals(userIdToKick)) {
             throw new UnauthorizedActionException("You cannot kick yourself");

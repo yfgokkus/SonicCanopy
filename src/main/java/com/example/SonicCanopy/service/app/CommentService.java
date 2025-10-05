@@ -6,10 +6,12 @@ import com.example.SonicCanopy.domain.dto.comment.CreateCommentRequest;
 import com.example.SonicCanopy.domain.dto.global.PagedResponse;
 import com.example.SonicCanopy.domain.entity.*;
 import com.example.SonicCanopy.domain.exception.club.UnauthorizedActionException;
+import com.example.SonicCanopy.domain.exception.comment.CommentLikeException;
 import com.example.SonicCanopy.domain.exception.comment.CommentNotFoundException;
 import com.example.SonicCanopy.domain.exception.event.EventNotFoundException;
 import com.example.SonicCanopy.domain.mapper.CommentMapper;
 import com.example.SonicCanopy.repository.ClubRepository;
+import com.example.SonicCanopy.repository.CommentLikeRepository;
 import com.example.SonicCanopy.repository.CommentRepository;
 import com.example.SonicCanopy.repository.EventRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,6 +34,7 @@ import java.util.UUID;
 public class CommentService {
 
     private final CommentRepository commentRepository;
+    private final CommentLikeRepository commentLikeRepository;
     private final EventRepository eventRepository;
     private final ClubRepository clubRepository;
     private final ClubAuthorizationService clubAuthorizationService;
@@ -40,7 +43,7 @@ public class CommentService {
 
     private final Clock clock;
 
-    public CommentService(CommentRepository commentRepository,
+    public CommentService(CommentRepository commentRepository, CommentLikeRepository commentLikeRepository,
                           EventRepository eventRepository,
                           Clock clock,
                           CommentMapper commentMapper,
@@ -48,6 +51,7 @@ public class CommentService {
                           ClubRepository clubRepository
     ) {
         this.commentRepository = commentRepository;
+        this.commentLikeRepository = commentLikeRepository;
         this.eventRepository = eventRepository;
         this.clock = clock;
         this.commentMapper = commentMapper;
@@ -55,6 +59,7 @@ public class CommentService {
         this.clubRepository = clubRepository;
     }
 
+    @Transactional
     public CommentDto createComment(CreateCommentRequest request, User requester, Long clubId, Long eventId){
          if(clubRepository.isPrivate(clubId) && !clubAuthorizationService.isMember(requester.getId(),  clubId)){
              throw new UnauthorizedActionException("You are not a member of this private club.");
@@ -106,7 +111,7 @@ public class CommentService {
     }
 
     @Transactional
-    public void hardDeleteComment(UUID uuid, User requester, Long clubId){
+    public void hardDeleteComment(UUID uuid, Long clubId, User requester){
         clubAuthorizationService.isMemberOrThrow(requester.getId(), clubId, "You are not authorized to delete this comment.");
 
         Comment comment = commentRepository.findByUuid(uuid).orElseThrow(
@@ -118,6 +123,7 @@ public class CommentService {
         commentRepository.delete(comment);
     }
 
+    @Transactional(readOnly = true)
     public PagedResponse<CommentDto> getRootComments(User requester, Long clubId, Long eventId, int page, int size, HttpServletRequest request) {
         if(clubRepository.isPrivate(clubId) && !clubAuthorizationService.isMember(requester.getId(),  clubId)){
             throw new UnauthorizedActionException("You are not a member of this private club.");
@@ -152,7 +158,7 @@ public class CommentService {
                 .orElseThrow(() -> new CommentNotFoundException("Root comment not found"));
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(
-                Sort.Order.asc("createdAt")  // or .desc("numberOfLikes").asc("createdAt")
+                Sort.Order.asc("createdAt")
         ));
 
         Page<Comment> commentPage = commentRepository.findRepliesFlattened(rootComment.getPath(), rootComment.getId(), pageable);
@@ -167,6 +173,33 @@ public class CommentService {
                 commentPage.getTotalPages(),
                 request
         );
+    }
+
+    @Transactional
+    public void likeComment(User requester, UUID commentUuid) {
+        Comment comment = commentRepository.findByUuid(commentUuid).orElseThrow(
+                () -> new CommentNotFoundException("Comment does not exit")
+        );
+
+        if(commentLikeRepository.existsByCommentAndUser(comment, requester)){
+            throw new CommentLikeException("You liked the message already");
+        }
+
+        commentLikeRepository.save(new CommentLike(null,comment, requester, LocalDateTime.now(clock)));
+        comment.setNumberOfLikes(comment.getNumberOfLikes() + 1);
+    }
+
+    @Transactional
+    public void unlikeComment(User requester, UUID commentUuid) {
+        Comment comment = commentRepository.findByUuid(commentUuid).orElseThrow(
+                () -> new CommentNotFoundException("Comment does not exit")
+        );
+
+        if(!commentLikeRepository.existsByCommentAndUser(comment, requester)){
+            throw new CommentLikeException("You have not liked the message before");
+        }
+
+        commentLikeRepository.deleteByCommentAndUser(comment, requester);
     }
 
     private List<CommentDto> mapCommentsInPageToDtoList(Page<Comment> commentPage, Long eventId) {

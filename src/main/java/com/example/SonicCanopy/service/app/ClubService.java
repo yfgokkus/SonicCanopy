@@ -74,7 +74,7 @@ public class ClubService  {
     public void deleteClub(Long clubId, User requester) {
         Club club = getClub(clubId);
 
-        clubAuthorizationService.authorizeClubDeletion(clubId, requester);
+        clubAuthorizationService.authorize(clubId, requester.getId(), Privilege.DELETE_CLUB);
 
         firebaseStorageService.deleteClubImage(club.getImageUrl());
 
@@ -85,7 +85,7 @@ public class ClubService  {
     public String uploadClubImage(Long clubId, MultipartFile file, User requester) {
         Club club = getClub(clubId);
 
-        clubAuthorizationService.authorizeClubSettingsManagement(clubId, requester);
+        clubAuthorizationService.authorize(clubId, requester.getId(), Privilege.EDIT_CLUB_SETTINGS);
         
         //upload new image before so that old one won't be deleted on failure
         String newImageUrl = firebaseStorageService.uploadClubImage(clubId, file); 
@@ -104,7 +104,7 @@ public class ClubService  {
     public void deleteClubImage(Long clubId, User requester) {
         Club club = getClub(clubId);
 
-        clubAuthorizationService.authorizeClubSettingsManagement(clubId, requester);
+        clubAuthorizationService.authorize(clubId, requester.getId(), Privilege.EDIT_CLUB_SETTINGS);
 
         firebaseStorageService.deleteClubImage(club.getImageUrl());
         club.setImageUrl(null);
@@ -122,7 +122,7 @@ public class ClubService  {
 
     public void togglePrivacy(Long clubId, User requester) {
 
-        clubAuthorizationService.authorizeClubSettingsManagement(clubId, requester);
+        clubAuthorizationService.authorize(clubId, requester.getId(), Privilege.EDIT_CLUB_SETTINGS);
 
         Club club = clubRepository.findById(clubId)
                 .orElseThrow(() -> new ClubNotFoundException("Club not found"));

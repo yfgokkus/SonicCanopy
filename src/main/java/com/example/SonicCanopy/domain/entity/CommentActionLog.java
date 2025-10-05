@@ -1,11 +1,16 @@
 package com.example.SonicCanopy.domain.entity;
 
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "comment_action_logs")
+@Getter @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class CommentActionLog {
     @Id @GeneratedValue
     private Long id;
@@ -21,5 +26,6 @@ public class CommentActionLog {
 
     private LocalDateTime performedAt;
 
+    //Optional
     private ClubRole actorRole;
 }
