@@ -78,7 +78,7 @@ public class ClubController {
         return ResponseEntity.ok(ApiResponse.success("Search results", response));
     }
 
-    @DeleteMapping("/{clubId}")
+    @PatchMapping("/{clubId}")
     public ResponseEntity<ApiResponse<Void>> toggleClubPrivacy(
             @PathVariable Long clubId,
             @AuthenticationPrincipal User user

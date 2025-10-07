@@ -238,7 +238,7 @@ public class ClubMemberServiceTest {
     @Test
     void getAllJoinRequests_ShouldReturnClubMemberDtoPage_WhenClubsExistAndRequesterIsAuthorized() {
         Long clubId = 1L;
-        doNothing().when(clubAuthorizationService).authorizeMemberManagement(clubId, requester);
+        doNothing().when(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
 
         ClubMember clubMember1 = ClubMember.builder().id(new ClubMemberId(clubId,12L)).build();
         ClubMember clubMember2 = ClubMember.builder().id(new ClubMemberId(clubId,14L)).build();
@@ -292,7 +292,7 @@ public class ClubMemberServiceTest {
     @Test
     void getAllJoinRequests_ShouldThrowRequestNotFoundException_WhenNoJoinRequestsExist() {
         Long clubId = 1L;
-        doNothing().when(clubAuthorizationService).authorizeMemberManagement(clubId, requester);
+        doNothing().when(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
 
         when(clubMemberRepository.findByClubIdAndStatus(clubId, JoinStatus.PENDING, pageable))
                 .thenReturn(Page.empty());
@@ -416,14 +416,14 @@ public class ClubMemberServiceTest {
                 .status(JoinStatus.PENDING)
                 .build();
 
-        doNothing().when(clubAuthorizationService).authorizeMemberManagement(clubId, requester);
+        doNothing().when(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
         when(clubMemberRepository.findByClubIdAndUserIdAndStatus(clubId, userId, JoinStatus.PENDING))
                 .thenReturn(Optional.of(membership));
 
         clubMemberService.acceptJoinRequest(clubId, userId, requester);
 
         assertEquals(JoinStatus.APPROVED, membership.getStatus());
-        verify(clubAuthorizationService).authorizeMemberManagement(clubId, requester);
+        verify(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
         verify(clubMemberRepository).save(membership);
     }
 
@@ -432,14 +432,14 @@ public class ClubMemberServiceTest {
         Long clubId = 1L;
         Long userId = 2L;
 
-        doNothing().when(clubAuthorizationService).authorizeMemberManagement(clubId, requester);
+        doNothing().when(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
         when(clubMemberRepository.findByClubIdAndUserIdAndStatus(clubId, userId, JoinStatus.PENDING))
                 .thenReturn(Optional.empty());
 
         assertThrows(RequestNotFoundException.class,
                 () -> clubMemberService.acceptJoinRequest(clubId, userId, requester));
 
-        verify(clubAuthorizationService).authorizeMemberManagement(clubId, requester);
+        verify(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
         verify(clubMemberRepository, never()).save(any());
     }
 
@@ -454,13 +454,13 @@ public class ClubMemberServiceTest {
                 .status(JoinStatus.PENDING)
                 .build();
 
-        doNothing().when(clubAuthorizationService).authorizeMemberManagement(clubId, requester);
+        doNothing().when(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
         when(clubMemberRepository.findByClubIdAndUserIdAndStatus(clubId, userId, JoinStatus.PENDING))
                 .thenReturn(Optional.of(membership));
 
         clubMemberService.rejectJoinRequest(clubId, userId, requester);
 
-        verify(clubAuthorizationService).authorizeMemberManagement(clubId, requester);
+        verify(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
         verify(clubMemberRepository).delete(membership);
     }
 
@@ -469,14 +469,14 @@ public class ClubMemberServiceTest {
         Long clubId = 1L;
         Long userId = 2L;
 
-        doNothing().when(clubAuthorizationService).authorizeMemberManagement(clubId, requester);
+        doNothing().when(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
         when(clubMemberRepository.findByClubIdAndUserIdAndStatus(clubId, userId, JoinStatus.PENDING))
                 .thenReturn(Optional.empty());
 
         assertThrows(RequestNotFoundException.class,
                 () -> clubMemberService.rejectJoinRequest(clubId, userId, requester));
 
-        verify(clubAuthorizationService).authorizeMemberManagement(clubId, requester);
+        verify(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
         verify(clubMemberRepository, never()).delete(any());
     }
 
@@ -495,13 +495,13 @@ public class ClubMemberServiceTest {
                 .clubRole(ClubRole.ADMIN)
                 .build();
 
-        doNothing().when(clubAuthorizationService).authorizeMemberManagement(clubId, requester);
+        doNothing().when(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
         when(clubMemberRepository.findById(new ClubMemberId(userIdToKick, clubId))).thenReturn(Optional.of(targetMember));
         when(clubMemberRepository.findById(new ClubMemberId(requester.getId(), clubId))).thenReturn(Optional.of(requesterMember));
 
         clubMemberService.kickMember(clubId, userIdToKick, requester);
 
-        verify(clubAuthorizationService).authorizeMemberManagement(clubId, requester);
+        verify(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
         verify(clubMemberRepository).delete(targetMember);
     }
 
@@ -510,12 +510,12 @@ public class ClubMemberServiceTest {
         Long clubId = 1L;
         Long userIdToKick = requester.getId();
 
-        doNothing().when(clubAuthorizationService).authorizeMemberManagement(clubId, requester);
+        doNothing().when(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
 
         assertThrows(UnauthorizedActionException.class,
                 () -> clubMemberService.kickMember(clubId, userIdToKick, requester));
 
-        verify(clubAuthorizationService).authorizeMemberManagement(clubId, requester);
+        verify(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
         verify(clubMemberRepository, never()).delete(any());
     }
 
@@ -524,13 +524,13 @@ public class ClubMemberServiceTest {
         Long clubId = 1L;
         Long userIdToKick = 2L;
 
-        doNothing().when(clubAuthorizationService).authorizeMemberManagement(clubId, requester);
+        doNothing().when(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
         when(clubMemberRepository.findById(new ClubMemberId(userIdToKick, clubId))).thenReturn(Optional.empty());
 
         assertThrows(ClubMemberDoesNotExistException.class,
                 () -> clubMemberService.kickMember(clubId, userIdToKick, requester));
 
-        verify(clubAuthorizationService).authorizeMemberManagement(clubId, requester);
+        verify(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
         verify(clubMemberRepository, never()).delete(any());
     }
 
@@ -543,14 +543,14 @@ public class ClubMemberServiceTest {
                 .clubRole(ClubRole.MEMBER)
                 .build();
 
-        doNothing().when(clubAuthorizationService).authorizeMemberManagement(clubId, requester);
+        doNothing().when(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
         when(clubMemberRepository.findById(new ClubMemberId(userIdToKick, clubId))).thenReturn(Optional.of(targetMember));
         when(clubMemberRepository.findById(new ClubMemberId(requester.getId(), clubId))).thenReturn(Optional.empty());
 
         assertThrows(ClubMemberDoesNotExistException.class,
                 () -> clubMemberService.kickMember(clubId, userIdToKick, requester));
 
-        verify(clubAuthorizationService).authorizeMemberManagement(clubId, requester);
+        verify(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
         verify(clubMemberRepository, never()).delete(any());
     }
 
@@ -567,14 +567,14 @@ public class ClubMemberServiceTest {
                 .clubRole(ClubRole.ADMIN)
                 .build();
 
-        doNothing().when(clubAuthorizationService).authorizeMemberManagement(clubId, requester);
+        doNothing().when(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
         when(clubMemberRepository.findById(new ClubMemberId(userIdToKick, clubId))).thenReturn(Optional.of(targetMember));
         when(clubMemberRepository.findById(new ClubMemberId(requester.getId(), clubId))).thenReturn(Optional.of(requesterMember));
 
         assertThrows(UnauthorizedActionException.class,
                 () -> clubMemberService.kickMember(clubId, userIdToKick, requester));
 
-        verify(clubAuthorizationService).authorizeMemberManagement(clubId, requester);
+        verify(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
         verify(clubMemberRepository, never()).delete(any());
     }
 
@@ -591,14 +591,14 @@ public class ClubMemberServiceTest {
                 .clubRole(ClubRole.ADMIN)
                 .build();
 
-        doNothing().when(clubAuthorizationService).authorizeMemberManagement(clubId, requester);
+        doNothing().when(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
         when(clubMemberRepository.findById(new ClubMemberId(userIdToKick, clubId))).thenReturn(Optional.of(targetMember));
         when(clubMemberRepository.findById(new ClubMemberId(requester.getId(), clubId))).thenReturn(Optional.of(requesterMember));
 
         assertThrows(UnauthorizedActionException.class,
                 () -> clubMemberService.kickMember(clubId, userIdToKick, requester));
 
-        verify(clubAuthorizationService).authorizeMemberManagement(clubId, requester);
+        verify(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.MANAGE_MEMBERS);
         verify(clubMemberRepository, never()).delete(any());
     }
 

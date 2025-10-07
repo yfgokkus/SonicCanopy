@@ -81,7 +81,7 @@ public class CommentController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @PostMapping("/{uuid}")
+    @PatchMapping("/{uuid}")
     public ResponseEntity<ApiResponse<Void>> softDeleteComment(
             @PathVariable UUID uuid,
             @PathVariable Long clubId,
@@ -114,7 +114,7 @@ public class CommentController {
         return ResponseEntity.ok(ApiResponse.success("Comment liked successfully"));
     }
 
-    @PostMapping("/{uuid}/unlike")
+    @DeleteMapping("/{uuid}/unlike")
     public ResponseEntity<ApiResponse<Void>> unlikeComment(
             @PathVariable Long clubId,
             @PathVariable Long eventId,

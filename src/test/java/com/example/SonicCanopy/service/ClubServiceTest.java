@@ -197,12 +197,12 @@ class ClubServiceTest {
 
         when(clubRepository.findById(clubId)).thenReturn(Optional.of(mockClub));
 
-        doNothing().when(clubAuthorizationService).authorizeClubSettingsManagement(clubId, requester);
+        doNothing().when(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.EDIT_CLUB_SETTINGS);
         doNothing().when(firebaseStorageService).deleteClubImage(existingImageUrl);
 
         clubService.deleteClubImage(clubId, requester);
 
-        verify(clubAuthorizationService, times(1)).authorizeClubSettingsManagement(clubId, requester);
+        verify(clubAuthorizationService, times(1)).authorize(clubId, requester.getId(), Privilege.EDIT_CLUB_SETTINGS);
 
         verify(firebaseStorageService, times(1)).deleteClubImage(existingImageUrl);
 
@@ -225,7 +225,7 @@ class ClubServiceTest {
             clubService.deleteClubImage(nonExistentClubId, requester);
         });
 
-        verify(clubAuthorizationService, never()).authorizeClubSettingsManagement(anyLong(), any(User.class));
+        verify(clubAuthorizationService, never()).authorize(anyLong(), anyLong(), Privilege.EDIT_CLUB_SETTINGS);
         verify(firebaseStorageService, never()).deleteClubImage(anyString());
         verify(clubRepository, never()).save(any(Club.class));
     }
@@ -323,12 +323,12 @@ class ClubServiceTest {
                 .isPrivate(false)
                 .build();
 
-        doNothing().when(clubAuthorizationService).authorizeClubSettingsManagement(clubId, requester);
+        doNothing().when(clubAuthorizationService).authorize(clubId, requester.getId(), Privilege.EDIT_CLUB_SETTINGS);
         when(clubRepository.findById(clubId)).thenReturn(Optional.of(mockClub));
 
         clubService.togglePrivacy(clubId, requester);
 
-        verify(clubAuthorizationService, times(1)).authorizeClubSettingsManagement(clubId, requester);
+        verify(clubAuthorizationService, times(1)).authorize(clubId, requester.getId(), Privilege.EDIT_CLUB_SETTINGS);
 
         ArgumentCaptor<Club> clubCaptor = ArgumentCaptor.forClass(Club.class);
         verify(clubRepository, times(1)).save(clubCaptor.capture());
@@ -343,14 +343,14 @@ class ClubServiceTest {
         Long nonExistentClubId = 99L;
         User requester = User.builder().id(10L).build();
 
-        doNothing().when(clubAuthorizationService).authorizeClubSettingsManagement(nonExistentClubId, requester);
+        doNothing().when(clubAuthorizationService).authorize(nonExistentClubId, requester.getId(), Privilege.EDIT_CLUB_SETTINGS);
         when(clubRepository.findById(nonExistentClubId)).thenReturn(Optional.empty());
 
         assertThrows(ClubNotFoundException.class, () -> {
             clubService.togglePrivacy(nonExistentClubId, requester);
         });
 
-        verify(clubAuthorizationService, times(1)).authorizeClubSettingsManagement(nonExistentClubId, requester);
+        verify(clubAuthorizationService, times(1)).authorize(nonExistentClubId, requester.getId(), Privilege.EDIT_CLUB_SETTINGS);
 
         verify(clubRepository, never()).save(any(Club.class));
     }

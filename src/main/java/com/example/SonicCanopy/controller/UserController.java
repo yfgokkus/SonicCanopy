@@ -25,18 +25,15 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     private final UserService userService;
     private final ClubMemberService clubMemberService;
-    private final UserMapper mapper;
 
     public UserController(UserService userService, ClubMemberService clubMemberService, UserMapper mapper) {
         this.userService = userService;
         this.clubMemberService = clubMemberService;
-        this.mapper = mapper;
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<UserDto>> register(@Valid @RequestBody CreateUserRequest request) {
-        User user = userService.createUser(request);
-        UserDto response = mapper.toDto(user);
+        UserDto response = userService.createUser(request);
 
         log.info("User '{}' successfully created", request.username());
         return ResponseEntity
@@ -46,15 +43,13 @@ public class UserController {
 
     @GetMapping("/{username}")
     public ResponseEntity<ApiResponse<UserDto>> getUser(@PathVariable String username) {
-        User user = userService.getByUsername(username);
-        UserDto response = mapper.toDto(user);
+        UserDto response = userService.getByUsername(username);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserDto>> getMe(@AuthenticationPrincipal User user) {
-        User userFromDb = userService.getByUsername(user.getUsername());
-        UserDto response = mapper.toDto(userFromDb);
+        UserDto response = userService.getByUsername(user.getUsername());
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

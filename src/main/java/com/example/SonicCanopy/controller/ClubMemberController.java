@@ -20,7 +20,7 @@ public class ClubMemberController {
         this.clubMemberService = clubMemberService;
     }
 
-    @PostMapping
+    @PostMapping("/join")
     public ResponseEntity<ApiResponse<Void>> joinClub(
             @PathVariable Long clubId,
             @AuthenticationPrincipal User user) {
@@ -29,7 +29,7 @@ public class ClubMemberController {
         return ResponseEntity.ok(ApiResponse.success("Join request submitted"));
     }
 
-    @DeleteMapping
+    @DeleteMapping("/leave")
     public ResponseEntity<ApiResponse<Void>> leaveClub(
             @PathVariable Long clubId,
             @AuthenticationPrincipal User user) {

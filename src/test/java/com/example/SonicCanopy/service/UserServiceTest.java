@@ -1,9 +1,11 @@
 package com.example.SonicCanopy.service;
 
 import com.example.SonicCanopy.domain.dto.user.CreateUserRequest;
+import com.example.SonicCanopy.domain.dto.user.UserDto;
 import com.example.SonicCanopy.domain.entity.Role;
 import com.example.SonicCanopy.domain.entity.User;
 import com.example.SonicCanopy.domain.exception.user.UsernameAlreadyExistsException;
+import com.example.SonicCanopy.domain.mapper.UserMapper;
 import com.example.SonicCanopy.repository.UserRepository;
 import com.example.SonicCanopy.service.app.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,12 +25,14 @@ class UserServiceTest {
     private UserRepository userRepository;
     private PasswordEncoder passwordEncoder;
     private UserService userService;
+    private UserMapper userMapper;
 
     @BeforeEach
     void setup() {
         userRepository = mock(UserRepository.class);
         passwordEncoder = mock(PasswordEncoder.class);
-        userService = new UserService(userRepository, passwordEncoder);
+        userMapper = mock(UserMapper.class);
+        userService = new UserService(userRepository, passwordEncoder, userMapper);
     }
 
     // ---------- createUser tests ----------
@@ -54,11 +58,11 @@ class UserServiceTest {
 
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
 
-        User result = userService.createUser(request);
+        UserDto result = userService.createUser(request);
 
         assertNotNull(result);
-        assertEquals("john123", result.getUsername());
-        assertEquals("encodedPassword", result.getPassword());
+        assertEquals("john123", result.username());
+        //assertEquals("encodedPassword", result. );
         verify(userRepository).save(any(User.class));
     }
 
@@ -110,10 +114,10 @@ class UserServiceTest {
         User user = User.builder().username("john123").build();
         when(userRepository.findByUsername("john123")).thenReturn(Optional.of(user));
 
-        User result = userService.getByUsername("john123");
+        UserDto result = userService.getByUsername("john123");
 
         assertNotNull(result);
-        assertEquals("john123", result.getUsername());
+        assertEquals("john123", result.username());
     }
 
     @Test

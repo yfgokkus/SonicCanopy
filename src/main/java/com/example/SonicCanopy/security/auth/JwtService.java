@@ -2,6 +2,7 @@ package com.example.SonicCanopy.security.auth;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -14,8 +15,13 @@ import java.util.Map;
 public class JwtService {
 
     private final SecretKey secretKey;
-    private static final long ACCESS_TOKEN_EXPIRATION = 15 * 60 * 1000L; //15m
-    private static final long REFRESH_TOKEN_EXPIRATION = 7 * 24 * 60 * 60 * 1000L; // 7 days
+
+    @Value("${jwt.access.expiration}")
+    private long accessTokenExpiration;
+
+    @Value("${jwt.refresh.expiration}")
+    private long refreshTokenExpiration;
+
 
     public JwtService(SecretKey secretKey) {
         this.secretKey = secretKey;
@@ -24,13 +30,13 @@ public class JwtService {
     public String generateAccessToken(UserDetails user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("tokenType", "access");
-        return createToken(claims, user.getUsername(), ACCESS_TOKEN_EXPIRATION);
+        return createToken(claims, user.getUsername(), accessTokenExpiration);
     }
 
     public String generateRefreshToken(UserDetails user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("tokenType", "refresh");
-        return createToken(claims, user.getUsername(), REFRESH_TOKEN_EXPIRATION);
+        return createToken(claims, user.getUsername(), refreshTokenExpiration);
     }
 
     private String createToken(Map<String, ?> claims, String subject, long validityMillis) {
